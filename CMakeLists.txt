@@ -12,4 +12,3 @@ add_library(
     src/bit_set.c
 )
 target_include_directories(containers PUBLIC include)
-target_link_libraries(containers PRIVATE -lm)
