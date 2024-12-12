@@ -15,8 +15,9 @@ void vector_push_front(vector *, size_t, const void *);
 void vector_remove(vector *, size_t);
 void vector_pop_back(vector *);
 void vector_pop_front(vector *);
-[[nodiscard]] node_data *vector_at(const vector *, size_t);
-void vector_reverse(const vector *);
+void vector_set(vector *, size_t, size_t, const void *);
+[[nodiscard]] node_data vector_get(const vector *, size_t);
+void vector_reverse(vector *);
 void vector_delete(vector *);
 void vector_print(const vector *, print_t);
 
