@@ -584,7 +584,7 @@ void hash_map_print(
 #define HASH_A 228ull
 #define HASH_B 1337ull
 #define HASH_ANY_LOOP(type) while (key_sz >= sizeof(type)) { \
-    hash += (HASH_A * *(type*)key + HASH_B) % p % m; \
+    hash = (hash + (HASH_A * *(type*)key + HASH_B) % p) % m; \
     key = (unsigned char*)key + sizeof(type); \
     key_sz -= sizeof(type); \
 }
