@@ -277,11 +277,14 @@ void list_pop_front(
     long long index
 ) {
     const size_t size = list_size(this);
-    if (this->head == NULL || index > size - 1) {
+    if (this->head == NULL || index > (long long)size - 1) {
         return NULL;
     }
     if (index < 0ll) {
-        index %= (long long)size;
+        if (index < -(long long)size) {
+            return NULL;
+        }
+        index += (long long)size;
     }
     if (index == 0ll) {
         return this->head;
