@@ -314,13 +314,12 @@ void hash_map_insert(
         }
     } else { // first allocation
         assert(this->heap_buffer == NULL);
-        const size_t heap_buffer_capacity = HASH_MAP_MIN_CAPACITY;
-        bucket *const heap_buffer = calloc(heap_buffer_capacity, sizeof(bucket));
+        bucket *const heap_buffer = calloc(HASH_MAP_MIN_CAPACITY, sizeof(bucket));
         if (heap_buffer == NULL) {
-            fprintf(stderr, "malloc NULL return in hash_map_insert for capacity %lu\n", heap_buffer_capacity);
+            fprintf(stderr, "malloc NULL return in hash_map_insert for capacity %lu\n", HASH_MAP_MIN_CAPACITY);
             return;
         }
-        for (size_t i = 0ul; i < heap_buffer_capacity; ++i) {
+        for (size_t i = 0ul; i < HASH_MAP_MIN_CAPACITY; ++i) {
             bucket *const b = heap_buffer + i;
             b->key = NULL;
             b->data.data = NULL;
@@ -328,7 +327,7 @@ void hash_map_insert(
             b->next = NULL;
         }
         this->heap_buffer = heap_buffer;
-        this->heap_buffer_capacity = heap_buffer_capacity;
+        this->heap_buffer_capacity = HASH_MAP_MIN_CAPACITY;
     }
     // insertion
     const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, key);
@@ -540,9 +539,25 @@ void hash_map_print(
     );
     return r;
 }
+[[nodiscard]] static unsigned long long log2ull(unsigned long long ull) {
+    unsigned long long bsr = 0ull;
+    asm volatile (
+        "bsr %1, %0"
+        : "=r" (bsr)
+        : "r" (ull)
+    );
+    return bsr;
+}
 #else
 [[nodiscard]] static unsigned long long rdrand(void) {
     return lrand48();
+}
+[[nodiscard]] static unsigned long long log2ull(unsigned long long ull) {
+    unsigned long long bsr = 0ull;
+    while (ull >>= 1) {
+        ++bsr;
+    }
+    return bsr;
 }
 #endif
 
@@ -566,27 +581,59 @@ void hash_map_print(
     return 1;
 }
 
-#define HASH_A 228
-#define HASH_B 1337
+#define HASH_A 228ull
+#define HASH_B 1337ull
 #define HASH_ANY_LOOP(type) while (key_sz >= sizeof(type)) { \
     hash += (HASH_A * *(type*)key + HASH_B) % p % m; \
-    key = (char*)key + sizeof(type); \
+    key = (unsigned char*)key + sizeof(type); \
     key_sz -= sizeof(type); \
 }
-#define FERMAT_TEST_ATTEMPTS 50
+#define FERMAT_TEST_ATTEMPTS 50ull
 
 [[nodiscard]] size_t hash_any(
     const size_t m,
     size_t key_sz,
-    const void *restrict key
+    const void *key
 ) {
     size_t p = m;
     while (!is_prime(++p, FERMAT_TEST_ATTEMPTS)) {}
-    size_t hash = 0;
-    HASH_ANY_LOOP(long long);
-    HASH_ANY_LOOP(long);
-    HASH_ANY_LOOP(int);
-    HASH_ANY_LOOP(short);
-    HASH_ANY_LOOP(signed char);
+    size_t hash = 0ul;
+    HASH_ANY_LOOP(unsigned long long);
+    HASH_ANY_LOOP(unsigned long);
+    HASH_ANY_LOOP(unsigned);
+    HASH_ANY_LOOP(unsigned short);
+    HASH_ANY_LOOP(unsigned char);
     return hash;
+}
+
+[[nodiscard]] static size_t mod2(const size_t x, const size_t m) {
+    const size_t l2m = log2ull(m) + (m < 2ul);
+    const size_t shift = sizeof(size_t) * CHAR_BIT - l2m;
+    // return (x << shift) >> shift;
+    return x & (-1ul >> shift);
+}
+
+[[nodiscard]] size_t hash_ul(
+    const size_t m,
+    const size_t,
+    const void *key
+) {
+    assert(m != 0ul);
+    const size_t x = *(size_t*)key;
+    return mod2(HASH_A * x + HASH_B, m); // ~> (HASH_A * x + HASH_B) % m;
+}
+
+[[nodiscard]] size_t hash_str(
+    const size_t m,
+    const size_t key_sz,
+    const void *key
+) {
+    const char *str = *(char**)key;
+    const size_t l = strlen(str);
+    size_t sum = 0ull;
+    for (size_t i = 0ul; i < l; ++i, ++str) {
+        const size_t pow = mod2(l - i, sizeof(size_t)); // ~> (l - i) % sizeof(size_t);
+        sum += (size_t)*str << pow;
+    }
+    return hash_ul(m, key_sz, &sum);
 }

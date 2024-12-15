@@ -21,6 +21,8 @@ void hash_map_delete(hash_map *, unsigned char);
 void hash_map_print(const hash_map *, print_t, print_t);
 
 // hash functions
-size_t hash_any(size_t, size_t, const void *);
+[[nodiscard]] size_t hash_any(size_t, size_t, const void *);
+[[nodiscard]] size_t hash_ul(size_t, size_t, const void *);
+[[nodiscard]] size_t hash_str(size_t, size_t, const void *);
 
 #endif // HASH_MAP_H
