@@ -176,12 +176,20 @@ void binary_tree_insert(
     while (node != NULL) {
         parent = node;
         const signed char key_comparison = this->key_comparator(key, node->data.data);
-        if (key_comparison <= 0) {
+        if (key_comparison < 0) { // key < node->key
             is_left = 1;
             node = node->left;
-        } else {
+        } else if (key_comparison > 0) { // key > node->key
             is_left = 0;
             node = node->right;
+        } else { // key == node->key
+            // replacing element
+            if (intrusive) {
+                node->data.data = key;
+            } else {
+                memcpy(node->data.data, key, this->key_sz);
+            }
+            return;
         }
     }
     node = binary_tree_node_init(parent, this->key_sz, key, RED, intrusive);
@@ -495,7 +503,7 @@ void binary_tree_remove(
     free(removed_node);
 }
 
-[[nodiscard]] node_data *binary_tree_at(
+[[nodiscard]] static binary_tree_node *binary_tree_node_at(
     const binary_tree *const this,
     const void *restrict const key
 ) {
@@ -510,10 +518,24 @@ void binary_tree_remove(
         } else if (cr > 0) {
             node = node->right;
         } else {
-            return &node->data;
+            return node;
         }
     }
     return NULL;
+}
+
+[[nodiscard]] node_data *binary_tree_at(
+    const binary_tree *const this,
+    const void *restrict const key
+) {
+    if (this == NULL) {
+        return NULL;
+    }
+    binary_tree_node *node = binary_tree_node_at(this, key);
+    if (node == NULL) {
+        return NULL;
+    }
+    return &node->data;
 }
 
 [[maybe_unused]] static void post_order(
@@ -591,6 +613,56 @@ void binary_tree_remove(
         if (node->left != NULL) {
             list_push_back(stack, sizeof(binary_tree_node), node->left, 1);
         }
+    }
+    list_delete(stack, 1);
+}
+
+void binary_tree_visit_range(
+    const binary_tree *const restrict this,
+    const void *min,
+    const void *max,
+    visit_t visit
+) {
+    if (this == NULL || this->root == NULL) {
+        return;
+    }
+    const signed char comparison_result = this->key_comparator(min, max);
+    if (comparison_result == 0) { // min == max
+        binary_tree_node *node = binary_tree_node_at(this, min);
+        visit(&node->data);
+    }
+    if (comparison_result > 0) { // min > max => swapping
+        const void *const tmp = min;
+        min = max;
+        max = tmp;
+    }
+    // in_order visit
+    list* stack = list_init();
+    binary_tree_node *node = this->root;
+    unsigned char left = 1;
+    for (;;) {
+        if (left) {
+            while (node->left != NULL) {
+                list_push_back(stack, sizeof(binary_tree_node), node, 1);
+                node = node->left;
+            }
+        }
+        left = 1;
+        const signed char min_comp = this->key_comparator(node->data.data, min);
+        const signed char max_comp = this->key_comparator(node->data.data, max);
+        if (min_comp >= 0 && max_comp <= 0) {
+            visit(&node->data);
+        }
+        if (node->right != NULL) {
+            node = node->right;
+            continue;
+        }
+        if (list_tail(stack) == NULL) {
+            break;
+        }
+        node = list_at(stack, -1)->data;
+        list_pop_back(stack, 1);
+        left = 0;
     }
     list_delete(stack, 1);
 }
