@@ -122,20 +122,16 @@ void vector_insert(
         const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + non_fitting_part_size;
         if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
             const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-            void *const heap_buffer = malloc(heap_buffer_capacity);
+            void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
             if (heap_buffer == NULL) {
                 fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                 return;
             }
-            memcpy(heap_buffer, non_fitting_part_start, non_fitting_part_size);
-            memcpy((unsigned char*)heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-            free(this->heap_buffer);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
-        } else { // No heap buffer realloc needed
-            memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-            memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
         }
+        memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
+        memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
         memcpy(fitting_part_start + insertion_size, fitting_part_start, fitting_part_size);
         *(size_t*)fitting_part_start = type_sz;
         memcpy(fitting_part_start + sizeof(size_t), data, type_sz);
@@ -164,24 +160,18 @@ void vector_insert(
             const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + non_fitting_part_size + insertion_size;
             if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                 const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                void *const heap_buffer = malloc(heap_buffer_capacity);
+                void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                 if (heap_buffer == NULL) {
                     fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                     return;
                 }
-                *(size_t*)heap_buffer = type_sz;
-                memcpy((unsigned char*)heap_buffer + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
-                memcpy((unsigned char*)heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                free(this->heap_buffer);
                 this->heap_buffer = heap_buffer;
                 this->heap_buffer_capacity = heap_buffer_capacity;
-            } else { // No heap buffer realloc needed
-                memcpy((unsigned char*)this->heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                *(size_t*)this->heap_buffer = type_sz;
-                memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)this->heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
             }
+            memcpy((unsigned char*)this->heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
+            *(size_t*)this->heap_buffer = type_sz;
+            memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
+            memcpy((unsigned char*)this->heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
             this->stack_size -= not_fits_after;
             this->heap_size += 1ul + not_fits_after;
         } else { // Offset is on heap
@@ -196,25 +186,18 @@ void vector_insert(
             const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + insertion_size;
             if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                 const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                void *const heap_buffer = malloc(heap_buffer_capacity);
+                void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                 if (heap_buffer == NULL) {
                     fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                     return;
                 }
-                memcpy(heap_buffer, this->heap_buffer, heap_buffer_offset);
-                void *heap_buffer_insertion_point = (unsigned char*)heap_buffer + heap_buffer_offset;
-                *(size_t*)heap_buffer_insertion_point = type_sz;
-                memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, (unsigned char*)this->heap_buffer + heap_buffer_offset, heap_buffer_occupied_size - heap_buffer_offset);
-                free(this->heap_buffer);
                 this->heap_buffer = heap_buffer;
                 this->heap_buffer_capacity = heap_buffer_capacity;
-            } else { // No heap buffer realloc needed
-                void *heap_buffer_insertion_point = (unsigned char*)this->heap_buffer + heap_buffer_offset;
-                memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, heap_buffer_insertion_point, heap_buffer_occupied_size - heap_buffer_offset);
-                *(size_t*)heap_buffer_insertion_point = type_sz;
-                memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
             }
+            void *heap_buffer_insertion_point = (unsigned char*)this->heap_buffer + heap_buffer_offset;
+            memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, heap_buffer_insertion_point, heap_buffer_occupied_size - heap_buffer_offset);
+            *(size_t*)heap_buffer_insertion_point = type_sz;
+            memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
             ++this->heap_size;
         }
     }
@@ -250,25 +233,18 @@ void vector_push_back(
         const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + insertion_size;
         if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
             const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-            void *const heap_buffer = malloc(heap_buffer_capacity);
+            void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
             if (heap_buffer == NULL) {
                 fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                 return;
             }
-            memcpy(heap_buffer, this->heap_buffer, heap_buffer_offset);
-            void *heap_buffer_insertion_point = (unsigned char*)heap_buffer + heap_buffer_offset;
-            *(size_t*)heap_buffer_insertion_point = type_sz;
-            memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
-            memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, (unsigned char*)this->heap_buffer + heap_buffer_offset, heap_buffer_occupied_size - heap_buffer_offset);
-            free(this->heap_buffer);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
-        } else { // No heap buffer realloc needed
-            void *heap_buffer_insertion_point = (unsigned char*)this->heap_buffer + heap_buffer_offset;
-            memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, heap_buffer_insertion_point, heap_buffer_occupied_size - heap_buffer_offset);
-            *(size_t*)heap_buffer_insertion_point = type_sz;
-            memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
         }
+        void *heap_buffer_insertion_point = (unsigned char*)this->heap_buffer + heap_buffer_offset;
+        memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, heap_buffer_insertion_point, heap_buffer_occupied_size - heap_buffer_offset);
+        *(size_t*)heap_buffer_insertion_point = type_sz;
+        memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
         ++this->heap_size;
     }
 }
@@ -313,20 +289,16 @@ void vector_push_front(
         const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + non_fitting_part_size;
         if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
             const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-            void *const heap_buffer = malloc(heap_buffer_capacity);
+            void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
             if (heap_buffer == NULL) {
                 fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                 return;
             }
-            memcpy(heap_buffer, non_fitting_part_start, non_fitting_part_size);
-            memcpy((unsigned char*)heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-            free(this->heap_buffer);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
-        } else { // No heap buffer realloc needed
-            memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-            memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
         }
+        memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
+        memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
         memcpy(this->stack_buffer + insertion_size, this->stack_buffer, fitting_part_size);
         *(size_t*)this->stack_buffer = type_sz;
         memcpy(this->stack_buffer + sizeof(size_t), data, type_sz);
@@ -348,24 +320,18 @@ void vector_push_front(
             const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + non_fitting_part_size + insertion_size;
             if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                 const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                void *const heap_buffer = malloc(heap_buffer_capacity);
+                void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                 if (heap_buffer == NULL) {
                     fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                     return;
                 }
-                *(size_t*)heap_buffer = type_sz;
-                memcpy((unsigned char*)heap_buffer + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
-                memcpy((unsigned char*)heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                free(this->heap_buffer);
                 this->heap_buffer = heap_buffer;
                 this->heap_buffer_capacity = heap_buffer_capacity;
-            } else { // No heap buffer realloc needed
-                memcpy((unsigned char*)this->heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                *(size_t*)this->heap_buffer = type_sz;
-                memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)this->heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
             }
+            memcpy((unsigned char*)this->heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
+            *(size_t*)this->heap_buffer = type_sz;
+            memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
+            memcpy((unsigned char*)this->heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
             this->stack_size = 0ul;
             this->heap_size += 1ul + this->stack_size;
         } else { // Offset is on heap
@@ -374,22 +340,17 @@ void vector_push_front(
             const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + insertion_size;
             if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                 const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                void *const heap_buffer = malloc(heap_buffer_capacity);
+                void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                 if (heap_buffer == NULL) {
                     fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                     return;
                 }
-                *(size_t*)heap_buffer = type_sz;
-                memcpy((unsigned char*)heap_buffer + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)heap_buffer + insertion_size, this->heap_buffer, heap_buffer_occupied_size);
-                free(this->heap_buffer);
                 this->heap_buffer = heap_buffer;
                 this->heap_buffer_capacity = heap_buffer_capacity;
-            } else { // No heap buffer realloc needed
-                memcpy((unsigned char*)this->heap_buffer + insertion_size, this->heap_buffer, heap_buffer_occupied_size);
-                *(size_t*)this->heap_buffer = type_sz;
-                memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
             }
+            memcpy((unsigned char*)this->heap_buffer + insertion_size, this->heap_buffer, heap_buffer_occupied_size);
+            *(size_t*)this->heap_buffer = type_sz;
+            memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
             ++this->heap_size;
         }
     }
@@ -487,11 +448,10 @@ void vector_remove(
     // Realloc heap buffer if needed
     if (required_heap_buffer_capacity + 1ul < this->heap_buffer_capacity >> 2) {
         const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-        void *const heap_buffer = malloc(heap_buffer_capacity);
+        void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
         if (heap_buffer == NULL) {
             fprintf(stderr, "malloc NULL return in vector_remove for capacity %lu\n", heap_buffer_capacity);
         } else {
-            memcpy(heap_buffer, this->heap_buffer, required_heap_buffer_capacity);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
         }
@@ -546,11 +506,10 @@ void vector_pop_back(vector *const this) {
     // Realloc heap buffer if needed
     if (required_heap_buffer_capacity + 1ul < this->heap_buffer_capacity >> 2) {
         const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-        void *const heap_buffer = malloc(heap_buffer_capacity);
+        void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
         if (heap_buffer == NULL) {
             fprintf(stderr, "malloc NULL return in vector_remove for capacity %lu\n", heap_buffer_capacity);
         } else {
-            memcpy(heap_buffer, this->heap_buffer, required_heap_buffer_capacity);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
         }
@@ -613,11 +572,10 @@ void vector_pop_front(vector *const this) {
     // Realloc heap buffer if needed
     if (required_heap_buffer_capacity + 1ul < this->heap_buffer_capacity >> 2) {
         const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-        void *const heap_buffer = malloc(heap_buffer_capacity);
+        void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
         if (heap_buffer == NULL) {
             fprintf(stderr, "malloc NULL return in vector_remove for capacity %lu\n", heap_buffer_capacity);
         } else {
-            memcpy(heap_buffer, this->heap_buffer, required_heap_buffer_capacity);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
         }
@@ -682,11 +640,10 @@ void vector_set(
             // Realloc heap buffer if needed
             if (required_heap_buffer_capacity + 1ul < this->heap_buffer_capacity >> 2) {
                 const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                void *const heap_buffer = malloc(heap_buffer_capacity);
+                void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                 if (heap_buffer == NULL) {
                     fprintf(stderr, "malloc NULL return in vector_remove for capacity %lu\n", heap_buffer_capacity);
                 } else {
-                    memcpy(heap_buffer, this->heap_buffer, required_heap_buffer_capacity);
                     this->heap_buffer = heap_buffer;
                     this->heap_buffer_capacity = heap_buffer_capacity;
                 }
@@ -728,20 +685,16 @@ void vector_set(
                 const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + non_fitting_part_size;
                 if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                     const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                    void *const heap_buffer = malloc(heap_buffer_capacity);
+                    void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                     if (heap_buffer == NULL) {
                         fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                         return;
                     }
-                    memcpy(heap_buffer, non_fitting_part_start, non_fitting_part_size);
-                    memcpy((unsigned char*)heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                    free(this->heap_buffer);
                     this->heap_buffer = heap_buffer;
                     this->heap_buffer_capacity = heap_buffer_capacity;
-                } else { // No heap buffer realloc needed
-                    memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                    memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
                 }
+                memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
+                memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
                 memcpy(stack_buffer_replacement_point + insertion_size, fitting_part_start, fitting_part_size);
                 *(size_t*)stack_buffer_replacement_point = type_sz;
                 memcpy(stack_buffer_replacement_point + sizeof(size_t), data, type_sz);
@@ -769,24 +722,18 @@ void vector_set(
                 const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + non_fitting_part_size + insertion_size;
                 if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                     const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                    void *const heap_buffer = malloc(heap_buffer_capacity);
+                    void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                     if (heap_buffer == NULL) {
                         fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                         return;
                     }
-                    *(size_t*)heap_buffer = type_sz;
-                    memcpy((unsigned char*)heap_buffer + sizeof(size_t), data, type_sz);
-                    memcpy((unsigned char*)heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
-                    memcpy((unsigned char*)heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                    free(this->heap_buffer);
                     this->heap_buffer = heap_buffer;
                     this->heap_buffer_capacity = heap_buffer_capacity;
-                } else { // No heap buffer realloc needed
-                    memcpy((unsigned char*)this->heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
-                    *(size_t*)this->heap_buffer = type_sz;
-                    memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
-                    memcpy((unsigned char*)this->heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
                 }
+                memcpy((unsigned char*)this->heap_buffer + insertion_size + non_fitting_part_size, this->heap_buffer, heap_buffer_occupied_size);
+                *(size_t*)this->heap_buffer = type_sz;
+                memcpy((unsigned char*)this->heap_buffer + sizeof(size_t), data, type_sz);
+                memcpy((unsigned char*)this->heap_buffer + insertion_size, non_fitting_part_start, non_fitting_part_size);
                 this->stack_size -= 1ul + not_fits_after;
                 this->heap_size += 1ul + not_fits_after;
             }
@@ -856,25 +803,18 @@ void vector_set(
             const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + insertion_size - replacement_size;
             if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                 const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                void *const heap_buffer = malloc(heap_buffer_capacity);
+                void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                 if (heap_buffer == NULL) {
                     fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                     return;
                 }
-                memcpy(heap_buffer, this->heap_buffer, heap_buffer_offset);
-                void *heap_buffer_insertion_point = (unsigned char*)heap_buffer + heap_buffer_offset;
-                *(size_t*)heap_buffer_insertion_point = type_sz;
-                memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
-                memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, (unsigned char*)this->heap_buffer + heap_buffer_offset + replacement_size, heap_buffer_occupied_size - heap_buffer_offset - replacement_size);
-                free(this->heap_buffer);
                 this->heap_buffer = heap_buffer;
                 this->heap_buffer_capacity = heap_buffer_capacity;
-            } else { // No heap buffer realloc needed
-                void *heap_buffer_insertion_point = (unsigned char*)this->heap_buffer + heap_buffer_offset;
-                memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, heap_buffer_insertion_point + replacement_size, heap_buffer_occupied_size - heap_buffer_offset - replacement_size);
-                *(size_t*)heap_buffer_insertion_point = type_sz;
-                memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
             }
+            void *heap_buffer_insertion_point = (unsigned char*)this->heap_buffer + heap_buffer_offset;
+            memcpy((unsigned char*)heap_buffer_insertion_point + insertion_size, heap_buffer_insertion_point + replacement_size, heap_buffer_occupied_size - heap_buffer_offset - replacement_size);
+            *(size_t*)heap_buffer_insertion_point = type_sz;
+            memcpy((unsigned char*)heap_buffer_insertion_point + sizeof(size_t), data, type_sz);
         } else { // type_sz == replacement_type_sz
             memcpy(heap_buffer_replacement_point + sizeof(size_t), data, type_sz);
         }
@@ -1009,24 +949,18 @@ static void vector_swap(
                     const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + i_size - j_size + non_fitting_part_size;
                     if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                         const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                        void *const heap_buffer = malloc(heap_buffer_capacity);
+                        void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                         if (heap_buffer == NULL) {
                             fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                             return;
                         }
-                        memcpy(heap_buffer, non_fitting_part_start, non_fitting_part_size);
-                        memcpy((unsigned char*)heap_buffer + non_fitting_part_size, this->heap_buffer, j_offset);
-                        memcpy((unsigned char*)heap_buffer + non_fitting_part_size + j_offset, i_element, i_size);
-                        memcpy((unsigned char*)heap_buffer + non_fitting_part_size + j_offset + i_size, (unsigned char*)this->heap_buffer + j_offset + j_size, heap_buffer_occupied_size - j_offset - j_size);
-                        free(this->heap_buffer);
                         this->heap_buffer = heap_buffer;
                         this->heap_buffer_capacity = heap_buffer_capacity;
-                    } else { // No heap buffer realloc needed
-                        memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size + j_offset + i_size, (unsigned char*)this->heap_buffer + j_offset + j_size, heap_buffer_occupied_size - j_offset - j_size);
-                        memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, j_offset);
-                        memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size + j_offset, i_element, i_size);
-                        memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
                     }
+                    memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size + j_offset + i_size, (unsigned char*)this->heap_buffer + j_offset + j_size, heap_buffer_occupied_size - j_offset - j_size);
+                    memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size, this->heap_buffer, j_offset);
+                    memcpy((unsigned char*)this->heap_buffer + non_fitting_part_size + j_offset, i_element, i_size);
+                    memcpy(this->heap_buffer, non_fitting_part_start, non_fitting_part_size);
                     memcpy(fitting_part_start + i_size, fitting_part_start, fitting_part_size);
                     memcpy(fitting_part_start, tmp, j_size);
                     free(tmp);
@@ -1056,26 +990,19 @@ static void vector_swap(
                     const size_t required_heap_buffer_capacity = heap_buffer_occupied_size + i_size - j_size + non_fitting_part_size;
                     if (required_heap_buffer_capacity > this->heap_buffer_capacity) { // Heap buffer realloc needed
                         const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                        void *const heap_buffer = malloc(heap_buffer_capacity);
+                        void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                         if (heap_buffer == NULL) {
                             fprintf(stderr, "malloc NULL return in vector_insert for capacity %lu\n", heap_buffer_capacity);
                             return;
                         }
-                        memcpy(heap_buffer, tmp, j_size);
-                        memcpy((unsigned char*)heap_buffer + j_size, non_fitting_part_start, non_fitting_part_size);
-                        memcpy((unsigned char*)heap_buffer + j_size + non_fitting_part_size, this->heap_buffer, j_offset);
-                        memcpy((unsigned char*)heap_buffer + j_size + non_fitting_part_size + j_offset, i_element, i_size);
-                        memcpy((unsigned char*)heap_buffer + j_size + non_fitting_part_size + j_offset + i_size, (unsigned char*)this->heap_buffer + j_offset + j_size, heap_buffer_occupied_size - j_offset - j_size);
-                        free(this->heap_buffer);
                         this->heap_buffer = heap_buffer;
                         this->heap_buffer_capacity = heap_buffer_capacity;
-                    } else { // No heap buffer realloc needed
-                        memcpy((unsigned char*)this->heap_buffer + j_size + non_fitting_part_size + j_offset + i_size, (unsigned char*)this->heap_buffer + j_offset + j_size, heap_buffer_occupied_size - j_offset - j_size);
-                        memcpy((unsigned char*)this->heap_buffer + j_size + non_fitting_part_size, this->heap_buffer, j_offset);
-                        memcpy((unsigned char*)this->heap_buffer + j_size + non_fitting_part_size + j_offset, i_element, i_size);
-                        memcpy((unsigned char*)this->heap_buffer + j_size, non_fitting_part_start, non_fitting_part_size);
-                        memcpy(this->heap_buffer, tmp, j_size);
                     }
+                    memcpy((unsigned char*)this->heap_buffer + j_size + non_fitting_part_size + j_offset + i_size, (unsigned char*)this->heap_buffer + j_offset + j_size, heap_buffer_occupied_size - j_offset - j_size);
+                    memcpy((unsigned char*)this->heap_buffer + j_size + non_fitting_part_size, this->heap_buffer, j_offset);
+                    memcpy((unsigned char*)this->heap_buffer + j_size + non_fitting_part_size + j_offset, i_element, i_size);
+                    memcpy((unsigned char*)this->heap_buffer + j_size, non_fitting_part_start, non_fitting_part_size);
+                    memcpy(this->heap_buffer, tmp, j_size);
                     free(tmp);
                     this->stack_size -= 1ul + not_fits_after;
                     this->heap_size += 1ul + not_fits_after;
@@ -1119,11 +1046,10 @@ static void vector_swap(
                 const size_t required_heap_buffer_capacity = heap_buffer_occupied_size - fitting_part_size + i_size - j_size;
                 if (required_heap_buffer_capacity + 1ul < this->heap_buffer_capacity >> 2) {
                     const size_t heap_buffer_capacity = (required_heap_buffer_capacity + 1ul) << 1;
-                    void *const heap_buffer = malloc(heap_buffer_capacity);
+                    void *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
                     if (heap_buffer == NULL) {
                         fprintf(stderr, "malloc NULL return in vector_remove for capacity %lu\n", heap_buffer_capacity);
                     } else {
-                        memcpy(heap_buffer, this->heap_buffer, required_heap_buffer_capacity);
                         this->heap_buffer = heap_buffer;
                         this->heap_buffer_capacity = heap_buffer_capacity;
                     }
@@ -1239,11 +1165,9 @@ void vector_reverse(vector *const this) {
     }
     size_t i = 0ul;
     size_t j = size - 1ul;
-    while (i < j) {
+    do {
         vector_swap(this, i, j);
-        ++i;
-        --j;
-    }
+    } while (++i < --j);
 }
 
 void vector_delete(vector *const this) {

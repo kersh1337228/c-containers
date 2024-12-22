@@ -67,13 +67,11 @@ void bit_set_insert(
     const size_t required_capacity = bits_to_chunks(this->size + 1ul);
     if (required_capacity > BIT_SET_STACK_CAPACITY + this->heap_buffer_capacity) {
         heap_buffer_capacity = (required_capacity - BIT_SET_STACK_CAPACITY + 1ul) << 1;
-        heap_buffer = malloc(heap_buffer_capacity);
+        heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
         if (heap_buffer == NULL) {
             fprintf(stderr, "malloc NULL return in bit_set_insert for heap_buffer_capacity %lu\n", heap_buffer_capacity);
             return;
         }
-        memcpy(heap_buffer, this->heap_buffer, this->heap_buffer_capacity);
-        free(this->heap_buffer);
     }
     // insertion
     const size_t insertion_chunk_index = abs_index / CHAR_BIT;
@@ -209,13 +207,11 @@ void bit_set_push_back(
     const size_t required_capacity = bits_to_chunks(this->size + 1ul);
     if (required_capacity > BIT_SET_STACK_CAPACITY + this->heap_buffer_capacity) {
         heap_buffer_capacity = (required_capacity - BIT_SET_STACK_CAPACITY + 1ul) << 1;
-        heap_buffer = malloc(heap_buffer_capacity);
+        heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
         if (heap_buffer == NULL) {
             fprintf(stderr, "malloc NULL return in bit_set_push_back for heap_buffer_capacity %lu\n", heap_buffer_capacity);
             return;
         }
-        memcpy(heap_buffer, this->heap_buffer, this->heap_buffer_capacity);
-        free(this->heap_buffer);
     }
     // insertion
     const size_t insertion_chunk_index = this->size / CHAR_BIT;
@@ -253,13 +249,11 @@ void bit_set_push_front(
     const size_t required_capacity = bits_to_chunks(this->size + 1ul);
     if (required_capacity > BIT_SET_STACK_CAPACITY + this->heap_buffer_capacity) {
         heap_buffer_capacity = (required_capacity - BIT_SET_STACK_CAPACITY + 1ul) << 1;
-        heap_buffer = malloc(heap_buffer_capacity);
+        heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
         if (heap_buffer == NULL) {
             fprintf(stderr, "malloc NULL return in bit_set_push_front for heap_buffer_capacity %lu\n", heap_buffer_capacity);
             return;
         }
-        memcpy(heap_buffer, this->heap_buffer, this->heap_buffer_capacity);
-        free(this->heap_buffer);
     }
     // insertion
     if (BIT_SET_STACK_CAPACITY == 0ul) {
@@ -466,14 +460,12 @@ void bit_set_remove(
             this->heap_buffer_capacity = 0;
         } else {
             const size_t heap_buffer_capacity = (required_capacity - BIT_SET_STACK_CAPACITY + 1ul) << 1;
-            unsigned char *const heap_buffer = malloc(heap_buffer_capacity);
+            unsigned char *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
             if (heap_buffer == NULL) {
                 --this->size;
                 fprintf(stderr, "malloc NULL return in bit_set_remove for heap_buffer_capacity %lu\n", heap_buffer_capacity);
                 return;
             }
-            memcpy(heap_buffer, this->heap_buffer, this->heap_buffer_capacity);
-            free(this->heap_buffer);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
         }
@@ -494,14 +486,12 @@ void bit_set_pop_back(bit_set *const this) {
             this->heap_buffer_capacity = 0;
         } else {
             const size_t heap_buffer_capacity = (required_capacity - BIT_SET_STACK_CAPACITY + 1ul) << 1;
-            unsigned char *const heap_buffer = malloc(heap_buffer_capacity);
+            unsigned char *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
             if (heap_buffer == NULL) {
                 --this->size;
                 fprintf(stderr, "malloc NULL return in bit_set_pop_back for heap_buffer_capacity %lu\n", heap_buffer_capacity);
                 return;
             }
-            memcpy(heap_buffer, this->heap_buffer, this->heap_buffer_capacity);
-            free(this->heap_buffer);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
         }
@@ -567,14 +557,12 @@ void bit_set_pop_front(bit_set *const this) {
             this->heap_buffer_capacity = 0;
         } else {
             const size_t heap_buffer_capacity = (required_capacity - BIT_SET_STACK_CAPACITY + 1ul) << 1;
-            unsigned char *const heap_buffer = malloc(heap_buffer_capacity);
+            unsigned char *const heap_buffer = realloc(this->heap_buffer, heap_buffer_capacity);
             if (heap_buffer == NULL) {
                 --this->size;
                 fprintf(stderr, "malloc NULL return in bit_set_pop_front for heap_buffer_capacity %lu\n", heap_buffer_capacity);
                 return;
             }
-            memcpy(heap_buffer, this->heap_buffer, this->heap_buffer_capacity);
-            free(this->heap_buffer);
             this->heap_buffer = heap_buffer;
             this->heap_buffer_capacity = heap_buffer_capacity;
         }

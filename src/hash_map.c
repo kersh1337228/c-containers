@@ -585,8 +585,8 @@ void hash_map_print(
 #define HASH_B 1337ull
 #define HASH_ANY_LOOP(type) while (key_sz >= sizeof(type)) { \
     hash = (hash + (HASH_A * *(type*)key + HASH_B) % p) % m; \
-    key = (unsigned char*)key + sizeof(type); \
-    key_sz -= sizeof(type); \
+    key = (unsigned char*)key + sizeof(type);                \
+    key_sz -= sizeof(type);                                  \
 }
 #define FERMAT_TEST_ATTEMPTS 50ull
 
