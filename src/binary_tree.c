@@ -20,12 +20,10 @@ struct binary_tree_node_t {
 struct binary_tree_t {
     binary_tree_node *root;
     comparator_t key_comparator;
-    size_t key_sz;
 };
 
 [[nodiscard]] binary_tree* binary_tree_init(
-    const comparator_t key_comparator,
-    const size_t key_sz
+    const comparator_t key_comparator
 ) {
     binary_tree *const bt = malloc(sizeof(binary_tree));
     if (bt == NULL) {
@@ -34,7 +32,6 @@ struct binary_tree_t {
     }
     bt->root = NULL;
     bt->key_comparator = key_comparator;
-    bt->key_sz = key_sz;
     return bt;
 }
 
@@ -160,6 +157,7 @@ static void rotate_right(binary_tree_node **root) {
 
 void binary_tree_insert(
     binary_tree *restrict const this,
+    const size_t key_sz,
     void *restrict const key,
     const unsigned char intrusive
 ) {
@@ -167,7 +165,7 @@ void binary_tree_insert(
         return;
     }
     if (this->root == NULL) {
-        this->root = binary_tree_node_init(NULL, this->key_sz, key, BLACK, intrusive);
+        this->root = binary_tree_node_init(NULL, key_sz, key, BLACK, intrusive);
         return;
     }
     binary_tree_node *parent = NULL;
@@ -187,12 +185,12 @@ void binary_tree_insert(
             if (intrusive) {
                 node->data.data = key;
             } else {
-                memcpy(node->data.data, key, this->key_sz);
+                memcpy(node->data.data, key, key_sz);
             }
             return;
         }
     }
-    node = binary_tree_node_init(parent, this->key_sz, key, RED, intrusive);
+    node = binary_tree_node_init(parent, key_sz, key, RED, intrusive);
     if (is_left) {
         parent->left = node;
     } else {

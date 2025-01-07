@@ -11,7 +11,7 @@
 #define HASH_MOD(capacity) ((capacity) * 86ul / 100ul)
 
 struct bucket_t {
-    void *key;
+    node_data key;
     node_data data;
     bucket *next; // coalesced hashing
 };
@@ -22,16 +22,14 @@ struct hash_map_t {
     size_t heap_buffer_capacity;
     hash_t hash_function;
     comparator_t key_comparator;
-    size_t key_sz;
 };
 
 [[nodiscard]] hash_map *hash_map_init(
     size_t capacity,
     const hash_t hash_function,
-    const comparator_t key_comparator,
-    const size_t key_sz
+    const comparator_t key_comparator
 ) {
-    if (hash_function == NULL || key_comparator == NULL || key_sz == 0ul) {
+    if (hash_function == NULL || key_comparator == NULL) {
         return NULL;
     }
     hash_map *const hm = malloc(sizeof(hash_map));
@@ -41,10 +39,10 @@ struct hash_map_t {
     }
     hm->hash_function = hash_function;
     hm->key_comparator = key_comparator;
-    hm->key_sz = key_sz;
     for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
         bucket *const b = hm->stack_buffer + i;
-        b->key = NULL;
+        b->key.data = NULL;
+        b->key.type_sz = 0;
         b->data.data = NULL;
         b->data.type_sz = 0ul;
         b->next = NULL;
@@ -65,7 +63,8 @@ struct hash_map_t {
         }
         for (size_t i = 0ul; i < heap_buffer_capacity; ++i) {
             bucket *const b = heap_buffer + i;
-            b->key = NULL;
+            b->key.data = NULL;
+            b->key.type_sz = 0;
             b->data.data = NULL;
             b->data.type_sz = 0ul;
             b->next = NULL;
@@ -83,13 +82,13 @@ struct hash_map_t {
     size_t size = 0ul;
     for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
         const bucket *const b = this->stack_buffer + i;
-        if (b->key != NULL) {
+        if (b->key.data != NULL) {
             ++size;
         }
     }
     for (size_t i = 0ul; i < this->heap_buffer_capacity; ++i) {
         const bucket *const b = this->heap_buffer + i;
-        if (b->key != NULL) {
+        if (b->key.data != NULL) {
             ++size;
         }
     }
@@ -104,7 +103,8 @@ static void hash_map_rehash(
     bucket stack_buffer[HASH_MAP_STACK_CAPACITY];
     for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
         bucket *const b = stack_buffer + i;
-        b->key = NULL;
+        b->key.data = NULL;
+        b->key.type_sz = 0;
         b->data.data = NULL;
         b->data.type_sz = 0;
         b->next = NULL;
@@ -114,22 +114,23 @@ static void hash_map_rehash(
         bucket *const heap_buffer = calloc(heap_buffer_capacity, sizeof(bucket));
         for (size_t i = 0ul; i < heap_buffer_capacity; ++i) {
             bucket *const b = heap_buffer + i;
-            b->key = NULL;
+            b->key.data = NULL;
+            b->key.type_sz = 0;
             b->data.data = NULL;
             b->data.type_sz = 0;
             b->next = NULL;
         }
         for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
             const bucket *const b = this->stack_buffer + i;
-            if (b->key != NULL) {
-                const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, b->key);
+            if (b->key.data != NULL) {
+                const size_t key_hash = this->hash_function(HASH_MOD(capacity), b->key.type_sz, b->key.data);
                 bucket *prev_bucket;
                 if (key_hash < HASH_MAP_STACK_CAPACITY) {
                     prev_bucket = stack_buffer + key_hash;
                 } else {
                     prev_bucket = heap_buffer + key_hash - HASH_MAP_STACK_CAPACITY;
                 }
-                if (prev_bucket->key == NULL) { // no collision
+                if (prev_bucket->key.data == NULL) { // no collision
                     prev_bucket->key = b->key;
                     prev_bucket->data = b->data;
                     prev_bucket->next = NULL;
@@ -141,12 +142,12 @@ static void hash_map_rehash(
                 }
                 bucket *new_bucket = heap_buffer + heap_buffer_capacity - 1ul;
                 size_t heap_buffer_decrements = 0ul;
-                while (new_bucket->key != NULL && ++heap_buffer_decrements < heap_buffer_capacity) {
+                while (new_bucket->key.data != NULL && ++heap_buffer_decrements < heap_buffer_capacity) {
                     --new_bucket;
                 }
-                if (new_bucket->key != NULL) {
+                if (new_bucket->key.data != NULL) {
                     new_bucket = stack_buffer + HASH_MAP_STACK_CAPACITY - 1ul;
-                    while (new_bucket->key != NULL) {
+                    while (new_bucket->key.data != NULL) {
                         --new_bucket;
                     }
                 }
@@ -158,15 +159,15 @@ static void hash_map_rehash(
         }
         for (size_t i = 0ul; i < this->heap_buffer_capacity; ++i) {
             const bucket *const b = this->heap_buffer + i;
-            if (b->key != NULL) {
-                const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, b->key);
+            if (b->key.data != NULL) {
+                const size_t key_hash = this->hash_function(HASH_MOD(capacity), b->key.type_sz, b->key.data);
                 bucket *prev_bucket;
                 if (key_hash < HASH_MAP_STACK_CAPACITY) {
                     prev_bucket = stack_buffer + key_hash;
                 } else {
                     prev_bucket = heap_buffer + key_hash - HASH_MAP_STACK_CAPACITY;
                 }
-                if (prev_bucket->key == NULL) { // no collision
+                if (prev_bucket->key.data == NULL) { // no collision
                     prev_bucket->key = b->key;
                     prev_bucket->data = b->data;
                     prev_bucket->next = NULL;
@@ -178,12 +179,12 @@ static void hash_map_rehash(
                 }
                 bucket *new_bucket = heap_buffer + heap_buffer_capacity - 1ul;
                 size_t heap_buffer_decrements = 0ul;
-                while (new_bucket->key != NULL && ++heap_buffer_decrements < heap_buffer_capacity) {
+                while (new_bucket->key.data != NULL && ++heap_buffer_decrements < heap_buffer_capacity) {
                     --new_bucket;
                 }
-                if (new_bucket->key != NULL) {
+                if (new_bucket->key.data != NULL) {
                     new_bucket = stack_buffer + HASH_MAP_STACK_CAPACITY - 1ul;
-                    while (new_bucket->key != NULL) {
+                    while (new_bucket->key.data != NULL) {
                         --new_bucket;
                     }
                 }
@@ -200,10 +201,10 @@ static void hash_map_rehash(
     } else { // stack reallocation only
         for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
             const bucket *const b = this->stack_buffer + i;
-            if (b->key != NULL) {
-                const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, b->key);
+            if (b->key.data != NULL) {
+                const size_t key_hash = this->hash_function(HASH_MOD(capacity), b->key.type_sz, b->key.data);
                 bucket *prev_bucket = stack_buffer + key_hash;
-                if (prev_bucket->key == NULL) { // no collision
+                if (prev_bucket->key.data == NULL) { // no collision
                     prev_bucket->key = b->key;
                     prev_bucket->data = b->data;
                     prev_bucket->next = NULL;
@@ -214,7 +215,7 @@ static void hash_map_rehash(
                     prev_bucket = prev_bucket->next;
                 }
                 bucket *new_bucket = stack_buffer + HASH_MAP_STACK_CAPACITY - 1ul;
-                while (new_bucket->key != NULL) {
+                while (new_bucket->key.data != NULL) {
                     --new_bucket;
                 }
                 new_bucket->key = b->key;
@@ -225,10 +226,10 @@ static void hash_map_rehash(
         }
         for (size_t i = 0ul; i < this->heap_buffer_capacity; ++i) {
             const bucket *const b = this->heap_buffer + i;
-            if (b->key != NULL) {
-                const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, b->key);
+            if (b->key.data != NULL) {
+                const size_t key_hash = this->hash_function(HASH_MOD(capacity), b->key.type_sz, b->key.data);
                 bucket *prev_bucket = stack_buffer + key_hash;
-                if (prev_bucket->key == NULL) { // no collision
+                if (prev_bucket->key.data == NULL) { // no collision
                     prev_bucket->key = b->key;
                     prev_bucket->data = b->data;
                     prev_bucket->next = NULL;
@@ -239,7 +240,7 @@ static void hash_map_rehash(
                     prev_bucket = prev_bucket->next;
                 }
                 bucket *new_bucket = stack_buffer + HASH_MAP_STACK_CAPACITY - 1ul;
-                while (new_bucket->key != NULL) {
+                while (new_bucket->key.data != NULL) {
                     --new_bucket;
                 }
                 new_bucket->key = b->key;
@@ -257,22 +258,23 @@ static void hash_map_rehash(
 
 [[nodiscard]] static bucket *hash_map_bucket_at(
     const hash_map *const restrict this,
+    const size_t key_sz,
     const void *const restrict key
 ) {
     const size_t capacity = HASH_MAP_STACK_CAPACITY + this->heap_buffer_capacity;
     assert(this != NULL && capacity != 0ul);
-    const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, key);
+    const size_t key_hash = this->hash_function(HASH_MOD(capacity), key_sz, key);
     bucket *b;
     if (key_hash < HASH_MAP_STACK_CAPACITY) {
         b = (bucket*)this->stack_buffer + key_hash;
     } else {
         b = this->heap_buffer + key_hash - HASH_MAP_STACK_CAPACITY;
     }
-    if (b->key == NULL) {
+    if (b->key.data == NULL) {
         return NULL;
     }
     do {
-        const unsigned char key_comparison_result = this->key_comparator(key, b->key);
+        const unsigned char key_comparison_result = this->key_comparator(key, b->key.data);
         if (key_comparison_result == 0) { // key == b->key
             return b;
         }
@@ -283,13 +285,14 @@ static void hash_map_rehash(
 
 [[nodiscard]] node_data *hash_map_at(
     const hash_map *const restrict this,
+    const size_t key_sz,
     const void *const restrict key
 ) {
     const size_t capacity = HASH_MAP_STACK_CAPACITY + this->heap_buffer_capacity;
     if (this == NULL || capacity == 0ul) {
         return NULL;
     }
-    bucket *const bucket_at = hash_map_bucket_at(this, key);
+    bucket *const bucket_at = hash_map_bucket_at(this, key_sz, key);
     if (bucket_at == NULL) {
         return NULL;
     }
@@ -298,6 +301,7 @@ static void hash_map_rehash(
 
 void hash_map_insert(
     hash_map *const restrict this,
+    const size_t key_sz,
     const void *const restrict key,
     const size_t data_sz,
     const void *const restrict data,
@@ -321,7 +325,8 @@ void hash_map_insert(
         }
         for (size_t i = 0ul; i < HASH_MAP_MIN_CAPACITY; ++i) {
             bucket *const b = heap_buffer + i;
-            b->key = NULL;
+            b->key.data = NULL;
+            b->key.type_sz = 0;
             b->data.data = NULL;
             b->data.type_sz = 0ul;
             b->next = NULL;
@@ -330,23 +335,24 @@ void hash_map_insert(
         this->heap_buffer_capacity = HASH_MAP_MIN_CAPACITY;
     }
     // insertion
-    const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, key);
+    const size_t key_hash = this->hash_function(HASH_MOD(capacity), key_sz, key);
     bucket *b;
     if (key_hash < HASH_MAP_STACK_CAPACITY) {
         b = this->stack_buffer + key_hash;
     } else {
         b = this->heap_buffer + key_hash - HASH_MAP_STACK_CAPACITY;
     }
-    if (b->key == NULL) { // not present (no collision) -> new
+    if (b->key.data == NULL) { // not present (no collision) -> new
         if (intrusive) {
-            b->key = (void*)key;
+            b->key.data = (void*)key;
             b->data.data = (void*)data;
         } else {
-            b->key = malloc(this->key_sz);
-            memcpy(b->key, key, this->key_sz);
+            b->key.data = malloc(key_sz);
+            memcpy(b->key.data, key, key_sz);
             b->data.data = malloc(data_sz);
             memcpy(b->data.data, data, data_sz);
         }
+        b->key.type_sz = key_sz;
         b->data.type_sz = data_sz;
         b->next = NULL;
         return;
@@ -354,7 +360,7 @@ void hash_map_insert(
     // collision or reassignment
     bucket *prev_bucket;
     do {
-        const unsigned char key_comparison_result = this->key_comparator(key, b->key);
+        const unsigned char key_comparison_result = this->key_comparator(key, b->key.data);
         if (key_comparison_result == 0) { // key == b->key
             // already present -> reassigning
             if (b->data.type_sz != data_sz) {
@@ -372,24 +378,25 @@ void hash_map_insert(
     // collision
     bucket *new_bucket = this->heap_buffer + this->heap_buffer_capacity - 1ul;
     size_t heap_buffer_decrements = 0ul;
-    while (new_bucket->key != NULL && ++heap_buffer_decrements < this->heap_buffer_capacity) {
+    while (new_bucket->key.data != NULL && ++heap_buffer_decrements < this->heap_buffer_capacity) {
         --new_bucket;
     }
-    if (new_bucket->key != NULL) {
+    if (new_bucket->key.data != NULL) {
         new_bucket = this->stack_buffer + HASH_MAP_STACK_CAPACITY - 1ul;
-        while (new_bucket->key != NULL) {
+        while (new_bucket->key.data != NULL) {
             --new_bucket;
         }
     }
     if (intrusive) {
-        new_bucket->key = (void*)key;
+        new_bucket->key.data = (void*)key;
         new_bucket->data.data = (void*)data;
     } else {
-        new_bucket->key = malloc(this->key_sz);
-        memcpy(new_bucket->key, key, this->key_sz);
+        new_bucket->key.data = malloc(key_sz);
+        memcpy(new_bucket->key.data, key, key_sz);
         new_bucket->data.data = malloc(data_sz);
         memcpy(new_bucket->data.data, data, data_sz);
     }
+    new_bucket->key.type_sz = key_sz;
     new_bucket->data.type_sz = data_sz;
     new_bucket->next = NULL;
     prev_bucket->next = new_bucket;
@@ -397,6 +404,7 @@ void hash_map_insert(
 
 void hash_map_remove(
     hash_map *const restrict this,
+    const size_t key_sz,
     const void *const restrict key,
     const unsigned char intrusive
 ) {
@@ -404,30 +412,31 @@ void hash_map_remove(
     if (this == NULL || capacity == 0ul) {
         return;
     }
-    const size_t key_hash = this->hash_function(HASH_MOD(capacity), this->key_sz, key);
+    const size_t key_hash = this->hash_function(HASH_MOD(capacity), key_sz, key);
     bucket *b;
     if (key_hash < HASH_MAP_STACK_CAPACITY) {
         b = this->stack_buffer + key_hash;
     } else {
         b = this->heap_buffer + key_hash - HASH_MAP_STACK_CAPACITY;
     }
-    if (b->key == NULL) { // not present -> exit
+    if (b->key.data == NULL) { // not present -> exit
         return;
     }
     // lookup
     bucket *prev_bucket = NULL;
     do {
-        const unsigned char key_comparison_result = this->key_comparator(key, b->key);
+        const unsigned char key_comparison_result = this->key_comparator(key, b->key.data);
         if (key_comparison_result == 0) { // key == b->key
             // present -> removing
             if (!intrusive) {
-                free(b->key);
+                free(b->key.data);
                 free(b->data.data);
             }
             if (prev_bucket != NULL) {
                 prev_bucket->next = b->next;
             }
-            b->key = NULL;
+            b->key.data = NULL;
+            b->key.type_sz = 0;
             b->data.data = NULL;
             b->data.type_sz = 0ul;
             b->next = NULL;
@@ -456,15 +465,15 @@ void hash_map_delete(
     if (!intrusive) {
         for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
             const bucket *const b = this->stack_buffer + i;
-            if (b->key != NULL) {
-                free(b->key);
+            if (b->key.data != NULL) {
+                free(b->key.data);
                 free(b->data.data);
             }
         }
         for (size_t i = 0ul; i < this->heap_buffer_capacity; ++i) {
             const bucket *const b = this->heap_buffer + i;
-            if (b->key != NULL) {
-                free(b->key);
+            if (b->key.data != NULL) {
+                free(b->key.data);
                 free(b->data.data);
             }
         }
@@ -482,26 +491,26 @@ void hash_map_print(
     unsigned char not_first = 0;
     for (size_t i = 0ul; i < HASH_MAP_STACK_CAPACITY; ++i) {
         const bucket *const b = this->stack_buffer + i;
-        if (b->key != NULL) {
+        if (b->key.data != NULL) {
             if (not_first) {
                 printf(", ");
             } else {
                 not_first = 1;
             }
-            print_key(b->key);
+            print_key(b->key.data);
             printf(": ");
             print_data(b->data.data);
         }
     }
     for (size_t i = 0ul; i < this->heap_buffer_capacity; ++i) {
         const bucket *const b = this->heap_buffer + i;
-        if (b->key != NULL) {
+        if (b->key.data != NULL) {
             if (not_first) {
                 printf(", ");
             } else {
                 not_first = 1;
             }
-            print_key(b->key);
+            print_key(b->key.data);
             printf(": ");
             print_data(b->data.data);
         }
@@ -628,12 +637,10 @@ void hash_map_print(
     const size_t key_sz,
     const void *key
 ) {
-    const char *str = *(char**)key;
-    const size_t l = strlen(str);
     size_t sum = 0ull;
-    for (size_t i = 0ul; i < l; ++i, ++str) {
-        const size_t pow = mod2(l - i, sizeof(size_t)); // ~> (l - i) % sizeof(size_t);
-        sum += (size_t)*str << pow;
+    for (size_t i = 0ul; i < key_sz; ++i, ++key) {
+        const size_t pow = mod2(key_sz - i, sizeof(size_t)); // ~> (l - i) % sizeof(size_t);
+        sum += (size_t)*(char*)key << pow;
     }
     return hash_ul(m, key_sz, &sum);
 }

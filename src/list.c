@@ -32,12 +32,18 @@ struct list_t {
     return this->tail;
 }
 
+[[nodiscard]] node_data *list_node_data(list_node *const node) {
+    return &node->data;
+}
+
 [[nodiscard]] size_t list_size(const list *const this) {
     size_t sz = 0;
-    const list_node *current_node = this->head;
-    while (current_node != NULL) {
-        ++sz;
-        current_node = current_node->next;
+    if (this != NULL) {
+        const list_node *current_node = this->head;
+        while (current_node != NULL) {
+            ++sz;
+            current_node = current_node->next;
+        }
     }
     return sz;
 }
@@ -85,6 +91,9 @@ void list_insert(
     void *restrict const data,
     const unsigned char intrusive
 ) {
+    if (this == NULL) {
+        return;
+    }
     const size_t size = list_size(this);
     if (index > size) {
         return;
@@ -130,6 +139,9 @@ void list_push_back(
     void *restrict const data,
     const unsigned char intrusive
 ) {
+    if (this == NULL) {
+        return;
+    }
     if (this->head == NULL) {
         list_node *new_node = list_node_init(type_sz, data, NULL, NULL, intrusive);
         this->head = new_node;
@@ -146,6 +158,9 @@ void list_push_front(
     void *restrict const data,
     const unsigned char intrusive
 ) {
+    if (this == NULL) {
+        return;
+    }
     if (this->head == NULL) {
         list_node *new_node = list_node_init(type_sz, data, NULL, NULL, intrusive);
         this->head = new_node;
@@ -161,8 +176,11 @@ void list_remove(
     size_t index,
     const unsigned char intrusive
 ) {
+    if (this == NULL || this->head == NULL) {
+        return;
+    }
     const size_t size = list_size(this);
-    if (this->head == NULL || index > size - 1) {
+    if (index > size - 1) {
         return;
     }
     if (this->head == this->tail) {
@@ -226,7 +244,7 @@ void list_pop_back(
     list *const this,
     const unsigned char intrusive
 ) {
-    if (this->head == NULL) {
+    if (this == NULL || this->head == NULL) {
         return;
     }
     if (this->head == this->tail) {
@@ -251,7 +269,7 @@ void list_pop_front(
     list *const this,
     const unsigned char intrusive
 ) {
-    if (this->head == NULL) {
+    if (this == NULL || this->head == NULL) {
         return;
     }
     if (this->head == this->tail) {
@@ -311,6 +329,9 @@ void list_pop_front(
     const list *const this,
     const long long index
 ) {
+    if (this == NULL || this->head == NULL) {
+        return NULL;
+    }
     list_node *const node_at = list_node_at(this, index);
     if (node_at == NULL) {
         return NULL;
@@ -318,8 +339,42 @@ void list_pop_front(
     return &node_at->data;
 }
 
+void list_swap(list *const this, list_node *const i, list_node *const j) {
+    if (this == NULL || i == NULL || j == NULL || i == j) {
+        return;
+    }
+    list_node *i_prev = i->prev;
+    if (i_prev != NULL) {
+        i_prev->next = j;
+    }
+    i->prev = j->prev;
+    if (j->prev != NULL) {
+        j->prev->next = i;
+    }
+    j->prev = i_prev;
+    list_node *i_next = i->next;
+    if (i_next != NULL) {
+        i_next->prev = j;
+    }
+    i->next = j->next;
+    if (j->next != NULL) {
+        j->next->prev = i;
+    }
+    j->next = i_next;
+    if (i == this->head) {
+        this->head = j;
+    } else if (j == this->head) {
+        this->head = i;
+    }
+    if (i == this->tail) {
+        this->tail = j;
+    } else if (j == this->tail) {
+        this->tail = i;
+    }
+}
+
 void list_reverse(list *const this) {
-    if (this->head == NULL || this->head->next == NULL) {
+    if (this == NULL || this->head == NULL || this->head->next == NULL) {
         return;
     }
     this->tail = this->head;
@@ -346,6 +401,9 @@ void list_delete(
     list *const this,
     const unsigned char intrusive
 ) {
+    if (this == NULL) {
+        return;
+    }
     list_node *current_node = this->head;
     while (current_node != NULL) {
         list_node *prev_node = current_node;
@@ -363,7 +421,7 @@ void list_print(
     const print_t print_data
 ) {
     printf("[");
-    if (this->head != NULL) {
+    if (this != NULL && this->head != NULL) {
         const list_node *current_node = this->head;
         while (current_node->next != NULL) {
             print_data(current_node->data.data);
