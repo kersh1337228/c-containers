@@ -339,6 +339,42 @@ void list_pop_front(
     return &node_at->data;
 }
 
+void list_node_move_to_head(list *const this, list_node *const node) {
+    if (this == NULL || node == NULL || this->head == node) {
+        return;
+    }
+    list_node *prev = node->prev;
+    list_node *next = node->next;
+    if (prev != NULL) {
+        prev->next = next;
+    }
+    if (next != NULL) {
+        next->prev = prev;
+    }
+    this->head->prev = node;
+    node->next = this->head;
+    node->prev = NULL;
+    this->head = node;
+}
+
+void list_node_move_to_tail(list *const this, list_node *const node) {
+    if (this == NULL || node == NULL || this->tail == node) {
+        return;
+    }
+    list_node *prev = node->prev;
+    list_node *next = node->next;
+    if (prev != NULL) {
+        prev->next = next;
+    }
+    if (next != NULL) {
+        next->prev = prev;
+    }
+    this->tail->next = node;
+    node->prev = this->tail;
+    node->next = NULL;
+    this->tail = node;
+}
+
 void list_swap(list *const this, list_node *const i, list_node *const j) {
     if (this == NULL || i == NULL || j == NULL || i == j) {
         return;

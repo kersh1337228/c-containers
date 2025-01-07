@@ -21,6 +21,7 @@ void list_remove(list *, size_t, unsigned char);
 void list_pop_back(list *, unsigned char);
 void list_pop_front(list *, unsigned char);
 [[nodiscard]] node_data *list_at(const list *, long long);
+void list_node_move_to_head(list *, list_node *);
 void list_swap(list *, list_node *, list_node *);
 void list_reverse(list *);
 void list_delete(list *, unsigned char);
