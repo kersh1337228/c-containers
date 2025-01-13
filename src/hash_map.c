@@ -624,7 +624,7 @@ void hash_map_print(
 
 [[nodiscard]] size_t hash_ul(
     const size_t m,
-    const size_t,
+    const size_t _,
     const void *key
 ) {
     assert(m != 0ul);

@@ -233,14 +233,14 @@ void forward_list_pop_front(
 }
 
 void forward_list_reverse(forward_list *const this) {
-    if (this->head == nullptr || this->head->next == nullptr) {
+    if (this->head == NULL || this->head->next == NULL) {
         return;
     }
     forward_list_node *new_head = this->head;
     forward_list_node *rem_head = new_head->next;
-    new_head->next = nullptr;
+    new_head->next = NULL;
     forward_list_node *new_head_prev = this->head;
-    while (rem_head != nullptr) {
+    while (rem_head != NULL) {
         new_head = rem_head;
         rem_head = new_head->next;
         new_head->next = new_head_prev;
