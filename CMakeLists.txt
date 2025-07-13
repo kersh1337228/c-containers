@@ -11,5 +11,6 @@ add_library(
     src/hash_map.c
     src/bit_set.c
     src/str.c
+    src/priority_queue.c
 )
 target_include_directories(containers PUBLIC include)
