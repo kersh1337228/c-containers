@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 
-struct forward_list_node_t {
-    struct forward_list_node_t *next;
-    node_data data;
+struct forward_list_node {
+    struct forward_list_node *next;
+    node_data_t data;
 };
 
-struct forward_list_t {
-    forward_list_node *head;
+struct forward_list {
+    forward_list_node_t *head;
 };
 
-[[nodiscard]] forward_list *forward_list_init(void) {
-    forward_list *const fl = malloc(sizeof(forward_list));
+[[nodiscard]] forward_list_t *forward_list_init(void) {
+    forward_list_t *const fl = malloc(sizeof(forward_list_t));
     if (fl == NULL) {
         fprintf(stderr, "malloc NULL return in forward_list_init\n");
         return fl;
@@ -21,13 +21,13 @@ struct forward_list_t {
     return fl;
 }
 
-[[nodiscard]] forward_list_node *forward_list_head(const forward_list *const this) {
+[[nodiscard]] forward_list_node_t *forward_list_head(const forward_list_t *const this) {
     return this->head;
 }
 
-[[nodiscard]] size_t forward_list_size(const forward_list *const this) {
+[[nodiscard]] size_t forward_list_size(const forward_list_t *const this) {
     size_t sz = 0;
-    const forward_list_node *current_node = this->head;
+    const forward_list_node_t *current_node = this->head;
     while (current_node != NULL) {
         ++sz;
         current_node = current_node->next;
@@ -35,13 +35,13 @@ struct forward_list_t {
     return sz;
 }
 
-static forward_list_node *forward_list_node_init(
+static forward_list_node_t *forward_list_node_init(
     const size_t type_sz,
     void *restrict const data,
-    forward_list_node *restrict const next,
+    forward_list_node_t *restrict const next,
     const unsigned char intrusive
 ) {
-    forward_list_node *new_node = malloc(sizeof(forward_list_node));
+    forward_list_node_t *new_node = malloc(sizeof(forward_list_node_t));
     if (new_node == NULL) {
         fprintf(stderr, "malloc NULL return in forward_list_node_init\n");
         return NULL;
@@ -64,7 +64,7 @@ static forward_list_node *forward_list_node_init(
 }
 
 void forward_list_insert(
-    forward_list *restrict const this,
+    forward_list_t *restrict const this,
     size_t index,
     const size_t type_sz,
     void *restrict const data,
@@ -75,60 +75,60 @@ void forward_list_insert(
         return;
     }
     if (this->head == NULL) {
-        forward_list_node *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
+        forward_list_node_t *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
         this->head = new_node;
         return;
     }
     if (index == 0) {
-        forward_list_node *new_node = forward_list_node_init(type_sz, data, this->head, intrusive);
+        forward_list_node_t *new_node = forward_list_node_init(type_sz, data, this->head, intrusive);
         this->head = new_node;
         return;
     }
-    forward_list_node *prev_node = this->head;
+    forward_list_node_t *prev_node = this->head;
     while (--index > 0) {
         prev_node = prev_node->next;
     }
-    forward_list_node *next_node = prev_node->next;
-    forward_list_node *new_node = forward_list_node_init(type_sz, data, next_node, intrusive);
+    forward_list_node_t *next_node = prev_node->next;
+    forward_list_node_t *new_node = forward_list_node_init(type_sz, data, next_node, intrusive);
     prev_node->next = new_node;
 }
 
 void forward_list_push_back(
-    forward_list *restrict const this,
+    forward_list_t *restrict const this,
     const size_t type_sz,
     void *restrict const data,
     const unsigned char intrusive
 ) {
     if (this->head == NULL) {
-        forward_list_node *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
+        forward_list_node_t *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
         this->head = new_node;
         return;
     }
-    forward_list_node *prev_node = this->head;
+    forward_list_node_t *prev_node = this->head;
     while (prev_node->next != NULL) {
         prev_node = prev_node->next;
     }
-    forward_list_node *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
+    forward_list_node_t *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
     prev_node->next = new_node;
 }
 
 void forward_list_push_front(
-    forward_list *restrict const this,
+    forward_list_t *restrict const this,
     const size_t type_sz,
     void *restrict const data,
     const unsigned char intrusive
 ) {
     if (this->head == NULL) {
-        forward_list_node *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
+        forward_list_node_t *new_node = forward_list_node_init(type_sz, data, NULL, intrusive);
         this->head = new_node;
         return;
     }
-    forward_list_node *new_node = forward_list_node_init(type_sz, data, this->head, intrusive);
+    forward_list_node_t *new_node = forward_list_node_init(type_sz, data, this->head, intrusive);
     this->head = new_node;
 }
 
 void forward_list_remove(
-    forward_list *const this,
+    forward_list_t *const this,
     size_t index,
     const unsigned char intrusive
 ) {
@@ -137,7 +137,7 @@ void forward_list_remove(
         return;
     }
     if (index == 0) {
-        forward_list_node *next_node = this->head->next;
+        forward_list_node_t *next_node = this->head->next;
         if (!intrusive) {
             free(this->head->data.data);
         }
@@ -145,12 +145,12 @@ void forward_list_remove(
         this->head = next_node;
         return;
     }
-    forward_list_node *prev_node = this->head;
+    forward_list_node_t *prev_node = this->head;
     while (--index > 0) {
         prev_node = prev_node->next;
     }
-    forward_list_node *current_node = prev_node->next;
-    forward_list_node *next_node = current_node->next;
+    forward_list_node_t *current_node = prev_node->next;
+    forward_list_node_t *next_node = current_node->next;
     if (!intrusive) {
         free(current_node->data.data);
     }
@@ -159,7 +159,7 @@ void forward_list_remove(
 }
 
 void forward_list_pop_back(
-    forward_list *const this,
+    forward_list_t *const this,
     const unsigned char intrusive
 ) {
     if (this->head == NULL) {
@@ -173,11 +173,11 @@ void forward_list_pop_back(
         this->head = NULL;
         return;
     }
-    forward_list_node *prev_node = this->head;
+    forward_list_node_t *prev_node = this->head;
     while (prev_node->next->next != NULL) {
         prev_node = prev_node->next;
     }
-    forward_list_node *current_node = prev_node->next;
+    forward_list_node_t *current_node = prev_node->next;
     if (!intrusive) {
         free(current_node->data.data);
     }
@@ -186,13 +186,13 @@ void forward_list_pop_back(
 }
 
 void forward_list_pop_front(
-    forward_list *const this,
+    forward_list_t *const this,
     const unsigned char intrusive
 ) {
     if (this->head == NULL) {
         return;
     }
-    forward_list_node *next_node = this->head->next;
+    forward_list_node_t *next_node = this->head->next;
     if (!intrusive) {
         free(this->head->data.data);
     }
@@ -200,8 +200,8 @@ void forward_list_pop_front(
     this->head = next_node;
 }
 
-[[nodiscard]] static forward_list_node *forward_list_node_at(
-    const forward_list *const this,
+[[nodiscard]] static forward_list_node_t *forward_list_node_at(
+    const forward_list_t *const this,
     long long index
 ) {
     const size_t size = forward_list_size(this);
@@ -214,32 +214,32 @@ void forward_list_pop_front(
     if (index == 0) {
         return this->head;
     }
-    forward_list_node *current_node = this->head->next;
+    forward_list_node_t *current_node = this->head->next;
     while (--index > 0) {
         current_node = current_node->next;
     }
     return current_node;
 }
 
-[[nodiscard]] node_data *forward_list_at(
-    const forward_list *const this,
+[[nodiscard]] node_data_t *forward_list_at(
+    const forward_list_t *const this,
     const long long index
 ) {
-    forward_list_node *const node_at = forward_list_node_at(this, index);
+    forward_list_node_t *const node_at = forward_list_node_at(this, index);
     if (node_at == NULL) {
         return NULL;
     }
     return &node_at->data;
 }
 
-void forward_list_reverse(forward_list *const this) {
+void forward_list_reverse(forward_list_t *const this) {
     if (this->head == NULL || this->head->next == NULL) {
         return;
     }
-    forward_list_node *new_head = this->head;
-    forward_list_node *rem_head = new_head->next;
+    forward_list_node_t *new_head = this->head;
+    forward_list_node_t *rem_head = new_head->next;
     new_head->next = NULL;
-    forward_list_node *new_head_prev = this->head;
+    forward_list_node_t *new_head_prev = this->head;
     while (rem_head != NULL) {
         new_head = rem_head;
         rem_head = new_head->next;
@@ -250,12 +250,12 @@ void forward_list_reverse(forward_list *const this) {
 }
 
 void forward_list_delete(
-    forward_list *const this,
+    forward_list_t *const this,
     const unsigned char intrusive
 ) {
-    forward_list_node *current_node = this->head;
+    forward_list_node_t *current_node = this->head;
     while (current_node != NULL) {
-        forward_list_node *prev_node = current_node;
+        forward_list_node_t *prev_node = current_node;
         current_node = current_node->next;
         if (!intrusive) {
             free(prev_node->data.data);
@@ -266,12 +266,12 @@ void forward_list_delete(
 }
 
 void forward_list_print(
-    const forward_list *restrict const this,
+    const forward_list_t *restrict const this,
     const print_t print_data
 ) {
     printf("[");
     if (this->head != NULL) {
-        const forward_list_node *current_node = this->head;
+        const forward_list_node_t *current_node = this->head;
         while (current_node->next != NULL) {
             print_data(current_node->data.data);
             printf(", ");

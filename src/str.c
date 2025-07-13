@@ -8,17 +8,17 @@
 #define RK_M 256
 #define RK_SHIFT (sizeof(size_t) * CHAR_BIT - 8) // mod (2^{8} = 256)
 
-struct string_control_block_t {
+struct string_control_block {
     char *buffer;
     size_t capacity;
     size_t ref_counter;
 };
 
-[[nodiscard]] static string_control_block *string_control_block_init(const size_t capacity) {
+[[nodiscard]] static string_control_block_t *string_control_block_init(const size_t capacity) {
     assert(capacity > 0);
-    string_control_block *const control_block = malloc(sizeof(string_control_block));
+    string_control_block_t *const control_block = malloc(sizeof(string_control_block_t));
     if (!control_block) {
-        fprintf(stderr, "malloc NULL return in string_control_block_init for size %lu\n", sizeof(string_control_block));
+        fprintf(stderr, "malloc NULL return in string_control_block_init for size %lu\n", sizeof(string_control_block_t));
         return NULL;
     }
     control_block->ref_counter = 1;
@@ -33,8 +33,8 @@ struct string_control_block_t {
     return control_block;
 }
 
-[[nodiscard]] string string_init(const char *const cstr) {
-    string this = {
+[[nodiscard]] string_t string_init(const char *const cstr) {
+    string_t this = {
         .size = 0,
         .control_block = NULL
     };
@@ -45,7 +45,7 @@ struct string_control_block_t {
     if (size <= sizeof(this.buffer)) {
         memcpy(this.buffer, cstr, size);
     } else {
-        string_control_block *const control_block = string_control_block_init(size << 1);
+        string_control_block_t *const control_block = string_control_block_init(size << 1);
         if (!control_block) {
             return this;
         }
@@ -56,7 +56,7 @@ struct string_control_block_t {
     return this;
 }
 
-[[nodiscard]] size_t string_length(const string *this) {
+[[nodiscard]] size_t string_length(const string_t *this) {
     if (!this) {
         return 0;
     }
@@ -64,9 +64,9 @@ struct string_control_block_t {
 }
 
 void string_insert(
-    string *const restrict this,
+    string_t *const restrict this,
     const size_t index,
-    const string *const restrict other
+    const string_t *const restrict other
 ) {
     if (!this || !other || index > this->size || !other->size) {
         return;
@@ -79,7 +79,7 @@ void string_insert(
     } else { // new string needs heap
         const char *const other_buffer = other->size <= sizeof(other->buffer) ? other->buffer : other->control_block->buffer;
         if (this->size <= sizeof(this->buffer)) { // this string fits on stack
-            string_control_block *const control_block = string_control_block_init(size << 1);
+            string_control_block_t *const control_block = string_control_block_init(size << 1);
             if (!control_block) {
                 return;
             }
@@ -90,7 +90,7 @@ void string_insert(
         } else { // this string needs heap
             assert(this->control_block && this->control_block->capacity && this->control_block->ref_counter);
             if (this->control_block->ref_counter > 1) { // lazy copy
-                string_control_block *const control_block = string_control_block_init(size << 1);
+                string_control_block_t *const control_block = string_control_block_init(size << 1);
                 if (!control_block) {
                     return;
                 }
@@ -125,21 +125,21 @@ void string_insert(
 }
 
 void string_rconcat(
-    string *const restrict this,
-    const string *const restrict other
+    string_t *const restrict this,
+    const string_t *const restrict other
 ) {
     string_insert(this, this->size, other);
 }
 
 void string_lconcat(
-    string *const restrict this,
-    const string *const restrict other
+    string_t *const restrict this,
+    const string_t *const restrict other
 ) {
     string_insert(this, 0, other);
 }
 
 void string_remove(
-    string *const this,
+    string_t *const this,
     const size_t index,
     size_t count
 ) {
@@ -158,7 +158,7 @@ void string_remove(
     } else { // this string needs heap
         assert(this->control_block && this->control_block->capacity && this->control_block->ref_counter);
         if (size <= sizeof(this->buffer)) { // new string fits on stack
-            string_control_block *const control_block = this->control_block;
+            string_control_block_t *const control_block = this->control_block;
             memcpy(this->buffer, control_block->buffer, index);
             memcpy(this->buffer + index, control_block->buffer + index + count, this->size - end);
             if (!--control_block->ref_counter) { // freeing control block
@@ -167,7 +167,7 @@ void string_remove(
             }
         } else { // new string needs heap
             if (this->control_block->ref_counter > 1) { // lazy copy
-                string_control_block *const control_block = string_control_block_init(size << 1);
+                string_control_block_t *const control_block = string_control_block_init(size << 1);
                 if (!control_block) {
                     return;
                 }
@@ -200,7 +200,7 @@ void string_remove(
 }
 
 void string_rtrim(
-    string *const this,
+    string_t *const this,
     size_t count
 ) {
     if (!this || !this->size || !count) {
@@ -213,7 +213,7 @@ void string_rtrim(
 }
 
 void string_ltrim(
-    string *const this,
+    string_t *const this,
     const size_t count
 ) {
     string_remove(this, 0, count);
@@ -252,7 +252,7 @@ void string_ltrim(
 }
 
 void string_rtrim_like(
-    string *const restrict this,
+    string_t *const restrict this,
     const char *const restrict like,
     const unsigned char case_insensitive
 ) {
@@ -275,7 +275,7 @@ void string_rtrim_like(
 }
 
 void string_ltrim_like(
-    string *const restrict this,
+    string_t *const restrict this,
     const char *const restrict like,
     const unsigned char case_insensitive
 ) {
@@ -298,7 +298,7 @@ void string_ltrim_like(
 }
 
 void string_trim_like(
-    string *const restrict this,
+    string_t *const restrict this,
     const char *const restrict like,
     const unsigned char case_insensitive
 ) {
@@ -307,7 +307,7 @@ void string_trim_like(
 }
 
 void string_set(
-    string *const this,
+    string_t *const this,
     const size_t index,
     const char c
 ) {
@@ -319,7 +319,7 @@ void string_set(
     } else { // this string needs heap
         assert(this->control_block && this->control_block->capacity && this->control_block->ref_counter);
         if (this->control_block->ref_counter > 1) { // lazy copy
-            string_control_block *const control_block = string_control_block_init(this->control_block->capacity);
+            string_control_block_t *const control_block = string_control_block_init(this->control_block->capacity);
             if (!control_block) {
                 return;
             }
@@ -332,7 +332,7 @@ void string_set(
 }
 
 [[nodiscard]] char string_get(
-    const string *const this,
+    const string_t *const this,
     const size_t index
 ) {
     if (!this || index >= this->size) {
@@ -341,8 +341,8 @@ void string_set(
     return this->size <= sizeof(this->buffer) ? this->buffer[index] : this->control_block->buffer[index];
 }
 
-[[nodiscard]] string string_copy(const string *const this) {
-    string copy = {
+[[nodiscard]] string_t string_copy(const string_t *const this) {
+    string_t copy = {
         .control_block = NULL,
         .size = 0
     };
@@ -357,12 +357,12 @@ void string_set(
     return copy;
 }
 
-[[nodiscard]] string string_substring(
-    const string *const this,
+[[nodiscard]] string_t string_substring(
+    const string_t *const this,
     const size_t index,
     size_t count
 ) {
-    string substring = {
+    string_t substring = {
         .control_block = NULL,
         .size = 0
     };
@@ -378,7 +378,7 @@ void string_set(
     if (count <= sizeof(substring.buffer)) { // substring fits on stack
         memcpy(substring.buffer, buffer + index, count);
     } else { // substring needs heap
-        string_control_block *const control_block = string_control_block_init(count << 1);
+        string_control_block_t *const control_block = string_control_block_init(count << 1);
         if (!control_block) {
             return substring;
         }
@@ -390,7 +390,7 @@ void string_set(
 }
 
 [[nodiscard]] long long string_lfind(
-    const string *const restrict this,
+    const string_t *const restrict this,
     const char *const restrict str,
     const unsigned char case_insensitive
 ) {
@@ -436,7 +436,7 @@ void string_set(
 }
 
 [[nodiscard]] long long string_rfind(
-    const string *const restrict this,
+    const string_t *const restrict this,
     const char *const restrict str,
     const unsigned char case_insensitive
 ) {
@@ -481,7 +481,7 @@ void string_set(
 }
 
 void string_replace(
-    string *const restrict this,
+    string_t *const restrict this,
     const char *const restrict from,
     const char *const restrict to,
     const unsigned char case_insensitive
@@ -506,7 +506,7 @@ void string_replace(
                 const size_t new_size = this->size + len_diff;
                 if (this->size <= sizeof(this->buffer)) { // this string fits on stack
                     if (new_size > sizeof(this->buffer)) { // new string needs heap
-                        string_control_block *const control_block = string_control_block_init(new_size << 1);
+                        string_control_block_t *const control_block = string_control_block_init(new_size << 1);
                         if (!control_block) {
                             return;
                         }
@@ -522,7 +522,7 @@ void string_replace(
                 } else { // this string needs heap
                     assert(this->control_block && this->control_block->capacity && this->control_block->ref_counter);
                     if (this->control_block->ref_counter > 1) { // lazy copy
-                        string_control_block *const control_block = string_control_block_init(new_size << 1);
+                        string_control_block_t *const control_block = string_control_block_init(new_size << 1);
                         if (!control_block) {
                             return;
                         }
@@ -567,7 +567,7 @@ void string_replace(
             } else {
                 if (this->size > sizeof(this->buffer) && this->control_block->ref_counter > 1) { // this string needs heap
                     // lazy copy
-                    string_control_block *const control_block = string_control_block_init((this->size + len_diff) << 1);
+                    string_control_block_t *const control_block = string_control_block_init((this->size + len_diff) << 1);
                     if (!control_block) {
                         return;
                     }
@@ -589,7 +589,7 @@ void string_replace(
         }
         if (len_diff < 0) { // new string will be smaller
             if (!is_small && this->size <= sizeof(this->buffer)) { // new string fits on stack
-                string_control_block *const control_block = this->control_block;
+                string_control_block_t *const control_block = this->control_block;
                 memcpy(this->buffer, control_block->buffer, this->size);
                 if (!--control_block->ref_counter) { // freeing control block
                     free(control_block->buffer);
@@ -617,8 +617,8 @@ void string_replace(
 }
 
 [[nodiscard]] long long string_compare(
-    const string *const this,
-    const string *const other,
+    const string_t *const this,
+    const string_t *const other,
     const unsigned char case_insensitive
 ) {
     if (!this) {
@@ -654,7 +654,7 @@ void string_replace(
     return 0;
 }
 
-[[nodiscard]] char *string_cstr(const string *const this) {
+[[nodiscard]] char *string_cstr(const string_t *const this) {
     if (!this) {
         return NULL;
     }
@@ -670,7 +670,7 @@ void string_replace(
     return cstr;
 }
 
-void string_reverse(string *const this) {
+void string_reverse(string_t *const this) {
     if (!this || this->size < 2) {
         return;
     }
@@ -685,7 +685,7 @@ void string_reverse(string *const this) {
     } else { // this string neads heap
         assert(this->control_block && this->control_block->capacity && this->control_block->ref_counter);
         if (this->control_block->ref_counter > 1) { // lazy copy
-            string_control_block *const control_block = string_control_block_init(this->control_block->capacity);
+            string_control_block_t *const control_block = string_control_block_init(this->control_block->capacity);
             if (!control_block) {
                 return;
             }
@@ -706,7 +706,7 @@ void string_reverse(string *const this) {
     }
 }
 
-void string_delete(string *const this) {
+void string_delete(string_t *const this) {
     if (!this) {
         return;
     }
@@ -720,7 +720,7 @@ void string_delete(string *const this) {
     this->size = 0;
 }
 
-void string_print(const string *const this) {
+void string_print(const string_t *const this) {
     if (!this || !this->size) {
         return;
     }

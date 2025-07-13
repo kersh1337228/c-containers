@@ -5,7 +5,7 @@
 
 #define BIT_SET_STACK_CAPACITY 2ul
 
-struct bit_set_t {
+struct bit_set {
     unsigned char stack_buffer[BIT_SET_STACK_CAPACITY]; // Small Object Optimization
     unsigned char *heap_buffer;
     size_t heap_buffer_capacity;
@@ -16,8 +16,8 @@ struct bit_set_t {
     return bits / CHAR_BIT + !!(bits % CHAR_BIT);
 }
 
-[[nodiscard]] bit_set *bit_set_init(const size_t capacity) {
-    bit_set *const bs = malloc(sizeof(bit_set));
+[[nodiscard]] bit_set_t *bit_set_init(const size_t capacity) {
+    bit_set_t *const bs = malloc(sizeof(bit_set_t));
     if (bs == NULL) {
         fprintf(stderr, "malloc NULL return in bit_set_init");
         return bs;
@@ -39,7 +39,7 @@ struct bit_set_t {
     return bs;
 }
 
-[[nodiscard]] size_t bit_set_size(const bit_set *const this) {
+[[nodiscard]] size_t bit_set_size(const bit_set_t *const this) {
     if (this == NULL) {
         return 0ul;
     }
@@ -47,9 +47,9 @@ struct bit_set_t {
 }
 
 void bit_set_insert(
-    bit_set *const this,
+    bit_set_t *const this,
     const long long index,
-    bit b
+    bit_t b
 ) {
     if (this == NULL) {
         return;
@@ -88,8 +88,8 @@ void bit_set_insert(
         } else {
             // heap shifting
             size_t chunk_offset = insertion_offset;
-            bit old_bit;
-            bit new_bit = b;
+            bit_t old_bit;
+            bit_t new_bit = b;
             if (insertion_bit_index > 0) {
                 for (unsigned char i = insertion_bit_index; i < CHAR_BIT; ++i) {
                     old_bit = (*insertion_chunk >> i) & 1u;
@@ -135,8 +135,8 @@ void bit_set_insert(
         } else {
             // stack shifting
             size_t chunk_offset = insertion_chunk_index;
-            bit old_bit;
-            bit new_bit = b;
+            bit_t old_bit;
+            bit_t new_bit = b;
             if (insertion_bit_index > 0) {
                 for (unsigned char i = insertion_bit_index; i < CHAR_BIT; ++i) {
                     old_bit = (*insertion_chunk >> i) & 1u;
@@ -192,8 +192,8 @@ void bit_set_insert(
 }
 
 void bit_set_push_back(
-    bit_set *const this,
-    bit b
+    bit_set_t *const this,
+    bit_t b
 ) {
     if (this == NULL) {
         return;
@@ -234,8 +234,8 @@ void bit_set_push_back(
 
 
 void bit_set_push_front(
-    bit_set *const this,
-    bit b
+    bit_set_t *const this,
+    bit_t b
 ) {
     if (this == NULL) {
         return;
@@ -266,8 +266,8 @@ void bit_set_push_front(
             }
         } else {
             // heap shifting
-            bit old_bit;
-            bit new_bit = b;
+            bit_t old_bit;
+            bit_t new_bit = b;
             const size_t occupied_heap_buffer_capacity = bits_to_chunks(this->size - BIT_SET_STACK_CAPACITY * CHAR_BIT);
             for (size_t i = 0ul; i < occupied_heap_buffer_capacity; ++i) {
                 unsigned char *current_chunk = heap_buffer + i;
@@ -300,8 +300,8 @@ void bit_set_push_front(
             }
         } else {
             // stack shifting
-            bit old_bit;
-            bit new_bit = b;
+            bit_t old_bit;
+            bit_t new_bit = b;
             for (size_t i = 0; i < BIT_SET_STACK_CAPACITY; ++i) {
                 unsigned char *current_chunk = this->stack_buffer + i;
                 old_bit = (*current_chunk >> (CHAR_BIT - 1)) & 1u;
@@ -345,7 +345,7 @@ void bit_set_push_front(
 }
 
 void bit_set_remove(
-    bit_set *const this,
+    bit_set_t *const this,
     const long long index
 ) {
     if (this == NULL || !this->size) {
@@ -360,8 +360,8 @@ void bit_set_remove(
         const size_t removal_chunk_index = abs_index / CHAR_BIT;
         const unsigned char removal_bit_index = abs_index % CHAR_BIT;
         const size_t occupied_heap_buffer_capacity = bits_to_chunks(this->size - BIT_SET_STACK_CAPACITY * CHAR_BIT);
-        bit old_bit;
-        bit new_bit = ZERO;
+        bit_t old_bit;
+        bit_t new_bit = ZERO;
         if (removal_chunk_index >= BIT_SET_STACK_CAPACITY) { // heap removal
             const size_t heap_removal_chunk_index = removal_chunk_index - BIT_SET_STACK_CAPACITY;
             // heap shifting
@@ -473,7 +473,7 @@ void bit_set_remove(
     --this->size;
 }
 
-void bit_set_pop_back(bit_set *const this) {
+void bit_set_pop_back(bit_set_t *const this) {
     if (this == NULL || !this->size) {
         return;
     }
@@ -499,15 +499,15 @@ void bit_set_pop_back(bit_set *const this) {
     --this->size;
 }
 
-void bit_set_pop_front(bit_set *const this) {
+void bit_set_pop_front(bit_set_t *const this) {
     if (this == NULL || !this->size) {
         return;
     }
     // removal
     if (this->size > 1ul) {
         const size_t occupied_heap_buffer_capacity = bits_to_chunks(this->size - BIT_SET_STACK_CAPACITY * CHAR_BIT);
-        bit old_bit;
-        bit new_bit = ZERO;
+        bit_t old_bit;
+        bit_t new_bit = ZERO;
         if (BIT_SET_STACK_CAPACITY == 0ul) { // heap removal
             // heap shifting
             for (long long i = (long long)occupied_heap_buffer_capacity - 1ll; i >= 0ll; --i) {
@@ -571,9 +571,9 @@ void bit_set_pop_front(bit_set *const this) {
 }
 
 void bit_set_set(
-    bit_set *const this,
+    bit_set_t *const this,
     const long long index,
-    bit b
+    bit_t b
 ) {
     if (this == NULL) {
         return;
@@ -600,8 +600,8 @@ void bit_set_set(
     }
 }
 
-[[nodiscard]] bit bit_set_get(
-    const bit_set *const this,
+[[nodiscard]] bit_t bit_set_get(
+    const bit_set_t *const this,
     const long long index
 ) {
     if (this == NULL) {
@@ -626,8 +626,8 @@ static void bit_set_bit_reverse(unsigned char *chunk) {
     unsigned char i = 0;
     unsigned char j = CHAR_BIT - 1;
     while (i < j) {
-        const bit bit_i = (*chunk >> i) & 1u;
-        const bit bit_j = (*chunk >> j) & 1u;
+        const bit_t bit_i = (*chunk >> i) & 1u;
+        const bit_t bit_j = (*chunk >> j) & 1u;
         if (bit_j == ZERO) {
             *chunk = *chunk & ~(1u << i);
         } else {
@@ -643,7 +643,7 @@ static void bit_set_bit_reverse(unsigned char *chunk) {
     }
 }
 
-void bit_set_reverse(bit_set *const this) {
+void bit_set_reverse(bit_set_t *const this) {
     if (this == NULL || this->size < 2ul) {
         return;
     }
@@ -659,7 +659,7 @@ void bit_set_reverse(bit_set *const this) {
             old_chunk = *current_chunk;
             *current_chunk = *current_chunk << last_chunk_free_size;
             for (unsigned char j = last_chunk_occupied_size; j < CHAR_BIT; ++j) {
-                const bit current_bit = (new_chunk >> j) & 1u;
+                const bit_t current_bit = (new_chunk >> j) & 1u;
                 if (current_bit == ZERO) {
                     *current_chunk = *current_chunk & ~(1u << (j - last_chunk_occupied_size));
                 } else {
@@ -675,7 +675,7 @@ void bit_set_reverse(bit_set *const this) {
             old_chunk = *current_chunk;
             *current_chunk = *current_chunk << last_chunk_free_size;
             for (unsigned char j = last_chunk_occupied_size; j < CHAR_BIT; ++j) {
-                const bit current_bit = (new_chunk >> j) & 1u;
+                const bit_t current_bit = (new_chunk >> j) & 1u;
                 if (current_bit == ZERO) {
                     *current_chunk = *current_chunk & ~(1u << (j - last_chunk_occupied_size));
                 } else {
@@ -729,14 +729,14 @@ void bit_set_reverse(bit_set *const this) {
     }
 }
 
-void bit_set_delete(bit_set *const this) {
+void bit_set_delete(bit_set_t *const this) {
     if (this != NULL) {
         free(this->heap_buffer);
         free(this);
     }
 }
 
-void bit_set_print(const bit_set *const this) {
+void bit_set_print(const bit_set_t *const this) {
     printf("[");
     if (this != NULL && this->size) {
         for (size_t i = 0; i < this->size - 1ul; ++i) {

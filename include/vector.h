@@ -3,22 +3,22 @@
 
 #include "containers.h"
 
-struct vector_t;
+struct vector;
 
-typedef struct vector_t vector;
+typedef struct vector vector_t;
 
-[[nodiscard]] vector *vector_init(size_t);
-[[nodiscard]] size_t vector_size(const vector *);
-void vector_insert(vector *, size_t, size_t, const void *);
-void vector_push_back(vector *, size_t, const void *);
-void vector_push_front(vector *, size_t, const void *);
-void vector_remove(vector *, size_t);
-void vector_pop_back(vector *);
-void vector_pop_front(vector *);
-void vector_set(vector *, size_t, size_t, const void *);
-[[nodiscard]] node_data vector_get(const vector *, size_t);
-void vector_reverse(vector *);
-void vector_delete(vector *);
-void vector_print(const vector *, print_t);
+[[ nodiscard ]] vector_t *vector_init(size_t);
+[[ nodiscard ]] size_t vector_size(const vector_t *);
+void vector_insert(vector_t *, size_t, size_t, const void *);
+void vector_push_back(vector_t *, size_t, const void *);
+void vector_push_front(vector_t *, size_t, const void *);
+void vector_remove(vector_t *, size_t);
+void vector_pop_back(vector_t *);
+void vector_pop_front(vector_t *);
+void vector_set(vector_t *, size_t, size_t, const void *);
+[[ nodiscard ]] node_data_t vector_get(const vector_t *, size_t);
+void vector_reverse(vector_t *);
+void vector_delete(vector_t *);
+void vector_print(const vector_t *, print_t);
 
 #endif // VECTOR_H

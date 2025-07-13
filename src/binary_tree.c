@@ -3,29 +3,28 @@
 #include <stdio.h>
 #include <string.h>
 
-enum node_color_t {
+typedef enum {
     RED = 0,
     BLACK = 1
-};
-typedef enum node_color_t node_color;
+} node_color_t;
 
-struct binary_tree_node_t {
-    binary_tree_node *parent;
-    binary_tree_node *left;
-    binary_tree_node *right;
-    node_data data;
-    node_color color;
+struct binary_tree_node {
+    binary_tree_node_t *parent;
+    binary_tree_node_t *left;
+    binary_tree_node_t *right;
+    node_data_t data;
+    node_color_t color;
 };
 
-struct binary_tree_t {
-    binary_tree_node *root;
+struct binary_tree {
+    binary_tree_node_t *root;
     comparator_t key_comparator;
 };
 
-[[nodiscard]] binary_tree* binary_tree_init(
+[[nodiscard]] binary_tree_t* binary_tree_init(
     const comparator_t key_comparator
 ) {
-    binary_tree *const bt = malloc(sizeof(binary_tree));
+    binary_tree_t *const bt = malloc(sizeof(binary_tree_t));
     if (bt == NULL) {
         fprintf(stderr, "malloc NULL return in binary_tree_init\n");
         return bt;
@@ -35,36 +34,36 @@ struct binary_tree_t {
     return bt;
 }
 
-[[nodiscard]] size_t binary_tree_size(const binary_tree *const this) {
+[[nodiscard]] size_t binary_tree_size(const binary_tree_t *const this) {
     if (this == NULL || this->root == NULL) {
         return 0;
     }
-    list *stack = list_init();
-    list_push_back(stack, sizeof(binary_tree_node), this->root, 1);
+    list_t *stack = list_init();
+    list_push_back(stack, sizeof(binary_tree_node_t), this->root, 1);
     size_t size = 0;
     while (list_tail(stack) != NULL) {
-        const binary_tree_node *const node = list_at(stack, -1)->data;
+        const binary_tree_node_t *const node = list_at(stack, -1)->data;
         list_pop_back(stack, 1);
         ++size;
         if (node->left != NULL) {
-            list_push_back(stack, sizeof(binary_tree_node), node->left, 1);
+            list_push_back(stack, sizeof(binary_tree_node_t), node->left, 1);
         }
         if (node->right != NULL) {
-            list_push_back(stack, sizeof(binary_tree_node), node->right, 1);
+            list_push_back(stack, sizeof(binary_tree_node_t), node->right, 1);
         }
     }
     list_delete(stack, 1);
     return size;
 }
 
-static binary_tree_node *binary_tree_node_init(
-    binary_tree_node *restrict const parent,
+static binary_tree_node_t *binary_tree_node_init(
+    binary_tree_node_t *restrict const parent,
     const size_t key_sz,
     void *restrict const key,
-    const node_color color,
+    const node_color_t color,
     const unsigned char intrusive
 ) {
-    binary_tree_node *new_node = malloc(sizeof(binary_tree_node));
+    binary_tree_node_t *new_node = malloc(sizeof(binary_tree_node_t));
     if (new_node == NULL) {
         fprintf(stderr, "malloc NULL return in binary_tree_node_init\n");
         return NULL;
@@ -89,20 +88,20 @@ static binary_tree_node *binary_tree_node_init(
     return new_node;
 }
 
-static void rotate_left(binary_tree_node **root) {
+static void rotate_left(binary_tree_node_t **root) {
     if (root == NULL) {
         return;
     }
-    binary_tree_node *a = *root;
+    binary_tree_node_t *a = *root;
     if (a == NULL) {
         return;
     }
-    binary_tree_node *parent = a->parent;
-    binary_tree_node *b = a->right;
+    binary_tree_node_t *parent = a->parent;
+    binary_tree_node_t *b = a->right;
     if (b == NULL) {
         return;
     }
-    binary_tree_node *c = b->left;
+    binary_tree_node_t *c = b->left;
     b->left = a;
     a->right = c;
     if (c != NULL) {
@@ -122,20 +121,20 @@ static void rotate_left(binary_tree_node **root) {
     }
 }
 
-static void rotate_right(binary_tree_node **root) {
+static void rotate_right(binary_tree_node_t **root) {
     if (root == NULL) {
         return;
     }
-    binary_tree_node *b = *root;
+    binary_tree_node_t *b = *root;
     if (b == NULL) {
         return;
     }
-    binary_tree_node *parent = b->parent;
-    binary_tree_node *a = b->left;
+    binary_tree_node_t *parent = b->parent;
+    binary_tree_node_t *a = b->left;
     if (a == NULL) {
         return;
     }
-    binary_tree_node *c = a->right;
+    binary_tree_node_t *c = a->right;
     a->right = b;
     b->left = c;
     if (c != NULL) {
@@ -156,7 +155,7 @@ static void rotate_right(binary_tree_node **root) {
 }
 
 void binary_tree_insert(
-    binary_tree *restrict const this,
+    binary_tree_t *restrict const this,
     const size_t key_sz,
     void *restrict const key,
     const unsigned char intrusive
@@ -168,8 +167,8 @@ void binary_tree_insert(
         this->root = binary_tree_node_init(NULL, key_sz, key, BLACK, intrusive);
         return;
     }
-    binary_tree_node *parent = NULL;
-    binary_tree_node *node = this->root;
+    binary_tree_node_t *parent = NULL;
+    binary_tree_node_t *node = this->root;
     unsigned char is_left = 0;
     while (node != NULL) {
         parent = node;
@@ -200,10 +199,10 @@ void binary_tree_insert(
         return;
     }
     // balancing
-    binary_tree_node *grandfather = parent->parent;
+    binary_tree_node_t *grandfather = parent->parent;
     while (parent->color == RED && grandfather != NULL) {
         if (parent == grandfather->left) {
-            binary_tree_node *uncle = grandfather->right;
+            binary_tree_node_t *uncle = grandfather->right;
             if (uncle != NULL && uncle->color == RED) {
                 parent->color = BLACK;
                 uncle->color = BLACK;
@@ -241,7 +240,7 @@ void binary_tree_insert(
                 }
             }
         } else {
-            binary_tree_node *uncle = grandfather->left;
+            binary_tree_node_t *uncle = grandfather->left;
             if (uncle != NULL && uncle->color == RED) {
                 parent->color = BLACK;
                 uncle->color = BLACK;
@@ -284,14 +283,14 @@ void binary_tree_insert(
 }
 
 void binary_tree_remove(
-    binary_tree *const this,
+    binary_tree_t *const this,
     const void *restrict const key,
     const unsigned char intrusive
 ) {
     if (this == NULL || this->root == NULL) {
         return;
     }
-    binary_tree_node *node = this->root;
+    binary_tree_node_t *node = this->root;
     unsigned char is_left = 0;
     for (;;) {
         const signed char cr = this->key_comparator(key, node->data.data);
@@ -348,7 +347,7 @@ void binary_tree_remove(
         }
     } else {
         // replacing node with max left subtree element
-        binary_tree_node *max_left = node->left;
+        binary_tree_node_t *max_left = node->left;
         is_left = 1;
         while (max_left->right != NULL) {
             max_left = max_left->right;
@@ -367,10 +366,10 @@ void binary_tree_remove(
         }
     }
     // balancing
-    binary_tree_node *removed_node = node;
+    binary_tree_node_t *removed_node = node;
     while (node->color == BLACK && node->parent != NULL) {
         if (node == node->parent->left) {
-            binary_tree_node *brother = node->parent->right;
+            binary_tree_node_t *brother = node->parent->right;
             if (brother == NULL) {
                 break;
             }
@@ -433,7 +432,7 @@ void binary_tree_remove(
                 break;
             }
         } else {
-            binary_tree_node *brother = node->parent->left;
+            binary_tree_node_t *brother = node->parent->left;
             if (brother == NULL) {
                 break;
             }
@@ -501,14 +500,14 @@ void binary_tree_remove(
     free(removed_node);
 }
 
-[[nodiscard]] static binary_tree_node *binary_tree_node_at(
-    const binary_tree *const this,
+[[nodiscard]] static binary_tree_node_t *binary_tree_node_at(
+    const binary_tree_t *const this,
     const void *restrict const key
 ) {
     if (this == NULL) {
         return NULL;
     }
-    binary_tree_node *node = this->root;
+    binary_tree_node_t *node = this->root;
     while (node != NULL) {
         const signed char cr = this->key_comparator(key, node->data.data);
         if (cr < 0) {
@@ -522,14 +521,14 @@ void binary_tree_remove(
     return NULL;
 }
 
-[[nodiscard]] node_data *binary_tree_at(
-    const binary_tree *const this,
+[[nodiscard]] node_data_t *binary_tree_at(
+    const binary_tree_t *const this,
     const void *restrict const key
 ) {
     if (this == NULL) {
         return NULL;
     }
-    binary_tree_node *node = binary_tree_node_at(this, key);
+    binary_tree_node_t *node = binary_tree_node_at(this, key);
     if (node == NULL) {
         return NULL;
     }
@@ -537,47 +536,47 @@ void binary_tree_remove(
 }
 
 [[maybe_unused]] static void post_order(
-    binary_tree_node *const this,
-    list *const lrv
+    binary_tree_node_t *const this,
+    list_t *const lrv
 ) {
     if (this == NULL) {
         return;
     }
-    list* stack = list_init();
-    list_push_back(stack, sizeof(binary_tree_node), this, 1);
+    list_t* stack = list_init();
+    list_push_back(stack, sizeof(binary_tree_node_t), this, 1);
     while (list_tail(stack) != NULL) {
-        binary_tree_node *const node = list_at(stack, -1)->data;
+        binary_tree_node_t *const node = list_at(stack, -1)->data;
         list_pop_back(stack, 1);
-        list_push_front(lrv, sizeof(binary_tree_node), node, 1);
+        list_push_front(lrv, sizeof(binary_tree_node_t), node, 1);
         if (node->left != NULL) {
-            list_push_back(stack, sizeof(binary_tree_node), node->left, 1);
+            list_push_back(stack, sizeof(binary_tree_node_t), node->left, 1);
         }
         if (node->right != NULL) {
-            list_push_back(stack, sizeof(binary_tree_node), node->right, 1);
+            list_push_back(stack, sizeof(binary_tree_node_t), node->right, 1);
         }
     }
     list_delete(stack, 1);
 }
 
 [[maybe_unused]] static void in_order(
-    binary_tree_node *const this,
-    list *const lvr
+    binary_tree_node_t *const this,
+    list_t *const lvr
 ) {
     if (this == NULL) {
         return;
     }
-    list* stack = list_init();
-    binary_tree_node *node = this;
+    list_t* stack = list_init();
+    binary_tree_node_t *node = this;
     unsigned char left = 1;
     for (;;) {
         if (left) {
             while (node->left != NULL) {
-                list_push_back(stack, sizeof(binary_tree_node), node, 1);
+                list_push_back(stack, sizeof(binary_tree_node_t), node, 1);
                 node = node->left;
             }
         }
         left = 1;
-        list_push_back(lvr, sizeof(binary_tree_node), node, 1);
+        list_push_back(lvr, sizeof(binary_tree_node_t), node, 1);
         if (node->right != NULL) {
             node = node->right;
             continue;
@@ -593,30 +592,30 @@ void binary_tree_remove(
 }
 
 [[maybe_unused]] static void pre_order(
-    binary_tree_node *const this,
-    list *const vlr
+    binary_tree_node_t *const this,
+    list_t *const vlr
 ) {
     if (this == NULL) {
         return;
     }
-    list* stack = list_init();
-    list_push_back(stack, sizeof(binary_tree_node), this, 1);
+    list_t* stack = list_init();
+    list_push_back(stack, sizeof(binary_tree_node_t), this, 1);
     while (list_tail(stack) != NULL) {
-        binary_tree_node *const node = list_at(stack, -1)->data;
-        list_push_back(vlr, sizeof(binary_tree_node), node, 1);
+        binary_tree_node_t *const node = list_at(stack, -1)->data;
+        list_push_back(vlr, sizeof(binary_tree_node_t), node, 1);
         list_pop_back(stack, 1);
         if (node->right != NULL) {
-            list_push_back(stack, sizeof(binary_tree_node), node->right, 1);
+            list_push_back(stack, sizeof(binary_tree_node_t), node->right, 1);
         }
         if (node->left != NULL) {
-            list_push_back(stack, sizeof(binary_tree_node), node->left, 1);
+            list_push_back(stack, sizeof(binary_tree_node_t), node->left, 1);
         }
     }
     list_delete(stack, 1);
 }
 
 void binary_tree_visit_range(
-    const binary_tree *const restrict this,
+    const binary_tree_t *const restrict this,
     const void *min,
     const void *max,
     visit_t visit
@@ -626,7 +625,7 @@ void binary_tree_visit_range(
     }
     const signed char comparison_result = this->key_comparator(min, max);
     if (comparison_result == 0) { // min == max
-        binary_tree_node *node = binary_tree_node_at(this, min);
+        binary_tree_node_t *node = binary_tree_node_at(this, min);
         visit(&node->data);
     }
     if (comparison_result > 0) { // min > max => swapping
@@ -635,13 +634,13 @@ void binary_tree_visit_range(
         max = tmp;
     }
     // in_order visit
-    list* stack = list_init();
-    binary_tree_node *node = this->root;
+    list_t* stack = list_init();
+    binary_tree_node_t *node = this->root;
     unsigned char left = 1;
     for (;;) {
         if (left) {
             while (node->left != NULL) {
-                list_push_back(stack, sizeof(binary_tree_node), node, 1);
+                list_push_back(stack, sizeof(binary_tree_node_t), node, 1);
                 node = node->left;
             }
         }
@@ -666,22 +665,22 @@ void binary_tree_visit_range(
 }
 
 void binary_tree_delete(
-    binary_tree *const this,
+    binary_tree_t *const this,
     const unsigned char intrusive
 ) {
     if (this == NULL) {
         return;
     }
     if (this->root != NULL) {
-        list* stack = list_init();
-        binary_tree_node **node = &this->root;
+        list_t* stack = list_init();
+        binary_tree_node_t **node = &this->root;
         for (;;) {
             while ((*node)->left != NULL) {
-                list_push_back(stack, sizeof(binary_tree_node*), node, 1);
+                list_push_back(stack, sizeof(binary_tree_node_t*), node, 1);
                 node = &(*node)->left;
             }
             if ((*node)->right != NULL) {
-                list_push_back(stack, sizeof(binary_tree_node*), node, 1);
+                list_push_back(stack, sizeof(binary_tree_node_t*), node, 1);
                 node = &(*node)->right;
                 continue;
             }

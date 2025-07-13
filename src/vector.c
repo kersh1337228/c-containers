@@ -5,7 +5,7 @@
 
 #define VECTOR_STACK_BUFFER_CAPACITY (sizeof(size_t) + 16ul)
 
-struct vector_t {
+struct vector {
     unsigned char stack_buffer[VECTOR_STACK_BUFFER_CAPACITY];
     size_t stack_size;
     void *heap_buffer;
@@ -13,8 +13,8 @@ struct vector_t {
     size_t heap_size;
 };
 
-[[nodiscard]] vector *vector_init(const size_t capacity) {
-    vector *v = malloc(sizeof(vector));
+[[nodiscard]] vector_t *vector_init(const size_t capacity) {
+    vector_t *v = malloc(sizeof(vector_t));
     if (v == NULL) {
         fprintf(stderr, "malloc NULL return in vector_init");
         return v;
@@ -37,7 +37,7 @@ struct vector_t {
     return v;
 }
 
-[[nodiscard]] size_t vector_size(const vector *const this) {
+[[nodiscard]] size_t vector_size(const vector_t *const this) {
     if (this == NULL) {
         return 0ul;
     }
@@ -45,7 +45,7 @@ struct vector_t {
 }
 
 [[nodiscard]] static size_t vector_offset_at(
-    const vector *const this,
+    const vector_t *const this,
     const size_t index
 ) {
     const size_t size = vector_size(this);
@@ -71,7 +71,7 @@ struct vector_t {
 }
 
 void vector_insert(
-    vector *restrict const this,
+    vector_t *restrict const this,
     const size_t index,
     const size_t type_sz,
     const void *restrict const data
@@ -204,7 +204,7 @@ void vector_insert(
 }
 
 void vector_push_back(
-    vector *restrict const this,
+    vector_t *restrict const this,
     const size_t type_sz,
     const void *restrict const data
 ) {
@@ -250,7 +250,7 @@ void vector_push_back(
 }
 
 void vector_push_front(
-    vector *restrict const this,
+    vector_t *restrict const this,
     const size_t type_sz,
     const void *restrict const data
 ) {
@@ -357,7 +357,7 @@ void vector_push_front(
 }
 
 void vector_remove(
-    vector *const this,
+    vector_t *const this,
     const size_t index
 ) {
     if (this == NULL) {
@@ -458,7 +458,7 @@ void vector_remove(
     }
 }
 
-void vector_pop_back(vector *const this) {
+void vector_pop_back(vector_t *const this) {
     if (this == NULL) {
         return;
     }
@@ -516,7 +516,7 @@ void vector_pop_back(vector *const this) {
     }
 }
 
-void vector_pop_front(vector *const this) {
+void vector_pop_front(vector_t *const this) {
     if (this == NULL) {
         return;
     }
@@ -583,7 +583,7 @@ void vector_pop_front(vector *const this) {
 }
 
 void vector_set(
-    vector *restrict const this,
+    vector_t *restrict const this,
     const size_t index,
     const size_t type_sz,
     const void *restrict const data
@@ -821,11 +821,11 @@ void vector_set(
     }
 }
 
-[[nodiscard]] node_data vector_get(
-    const vector *const this,
+[[nodiscard]] node_data_t vector_get(
+    const vector_t *const this,
     const size_t index
 ) {
-    node_data nd = {
+    node_data_t nd = {
         .type_sz = 0ul,
         .data = NULL
     };
@@ -850,7 +850,7 @@ void vector_set(
 }
 
 static void vector_swap(
-    vector *const this,
+    vector_t *const this,
     size_t i,
     size_t j
 ) {
@@ -1155,7 +1155,7 @@ static void vector_swap(
     }
 }
 
-void vector_reverse(vector *const this) {
+void vector_reverse(vector_t *const this) {
     if (this == NULL) {
         return;
     }
@@ -1170,13 +1170,13 @@ void vector_reverse(vector *const this) {
     } while (++i < --j);
 }
 
-void vector_delete(vector *const this) {
+void vector_delete(vector_t *const this) {
     free(this->heap_buffer);
     free(this);
 }
 
 void vector_print(
-    const vector *const this,
+    const vector_t *const this,
     const print_t print_data
 ) {
     printf("[");
